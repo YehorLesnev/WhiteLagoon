@@ -34,6 +34,8 @@ public class VillasController(ApplicationDbContext dbContext) : Controller
 	    await dbContext.Villas.AddAsync(villa);
         await dbContext.SaveChangesAsync();
 
+        TempData["success"] = "Villa created successfully.";    
+
 		return RedirectToAction(nameof(Index));
     }
 
@@ -62,6 +64,8 @@ public class VillasController(ApplicationDbContext dbContext) : Controller
         dbContext.Villas.Update(villa);
         await dbContext.SaveChangesAsync();
 
+        TempData["success"] = "Villa updated successfully.";
+
 		return RedirectToAction(nameof(Index));
     }
 
@@ -84,8 +88,13 @@ public class VillasController(ApplicationDbContext dbContext) : Controller
         {
 			dbContext.Villas.Remove(villaToDelete);
 			await dbContext.SaveChangesAsync();
+
+            TempData["success"] = "Villa deleted successfully.";
+
 			return RedirectToAction(nameof(Index));
 		}
+
+        TempData["error"] = "Villa not found.";
 
 		return View();
     }
