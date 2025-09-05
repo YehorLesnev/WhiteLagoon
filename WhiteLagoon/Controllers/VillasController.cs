@@ -31,7 +31,7 @@ public class VillasController(ApplicationDbContext dbContext) : Controller
 			return View(villa);
 		}
 
-			await dbContext.Villas.AddAsync(villa);
+	    await dbContext.Villas.AddAsync(villa);
         await dbContext.SaveChangesAsync();
 
 		return RedirectToAction(nameof(Index));
@@ -42,7 +42,7 @@ public class VillasController(ApplicationDbContext dbContext) : Controller
         Villa? villa = await dbContext.Villas.FirstOrDefaultAsync(v => v.Id == villaId);
 
         if(villa is null)
-			return NotFound();
+			return RedirectToAction(nameof(HomeController.Error), "Home");
 
 		return View(villa);
     }
@@ -50,9 +50,43 @@ public class VillasController(ApplicationDbContext dbContext) : Controller
     [HttpPost]
 	public async Task<IActionResult> Update(Villa villa)
     {
+		if (!ModelState.IsValid || villa.Id == 0)
+			return View();
+
+		if (villa.Name == villa.Description)
+        {
+            ModelState.AddModelError(nameof(Villa.Name), "The Name and Description cannot be the same.");
+			return View(villa);
+		}
+
+        dbContext.Villas.Update(villa);
+        await dbContext.SaveChangesAsync();
+
+		return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Delete(int villaId)
+    {
+        Villa? villa = await dbContext.Villas.FirstOrDefaultAsync(v => v.Id == villaId);
+
         if(villa is null)
-			return NotFound();
+			return RedirectToAction(nameof(HomeController.Error), "Home");
 
 		return View(villa);
+    }
+
+    [HttpPost]
+	public async Task<IActionResult> Delete(Villa villa)
+    {
+        var villaToDelete = await dbContext.Villas.FirstOrDefaultAsync(v => v.Id == villa.Id);
+
+		if (villaToDelete is not null)
+        {
+			dbContext.Villas.Remove(villaToDelete);
+			await dbContext.SaveChangesAsync();
+			return RedirectToAction(nameof(Index));
+		}
+
+		return View();
     }
 }
