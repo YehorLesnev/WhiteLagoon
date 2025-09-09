@@ -12,7 +12,8 @@
 	<div class="card-body border p-4">
 		<form method="post" class="row">
 			<input asp-for="Id" hidden />
-			<div class="p-3">
+			<div class="col-10">
+				<div class="p-3">
 				<div asp-validation-summary="ModelOnly"></div>
 				<div class="form-floating py-2 col-12">
 					<input disabled asp-for="Name" class="form-control border shadow" />
@@ -51,6 +52,10 @@
 						</a>
 					</div>
 				</div>
+				</div>
+			</div>
+			<div class="col-2">
+				<img src="@Model.ImageUrl" class="img-fluid rounded" style="min-height: 100px;" />
 			</div>
 		</form>
 	</div>
