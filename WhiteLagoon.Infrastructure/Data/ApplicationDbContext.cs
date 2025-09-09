@@ -13,6 +13,8 @@ public class ApplicationDbContext : DbContext
 
 	public DbSet<VillaNumber> VillaNumbers { get; set; }
 
+	public DbSet<Amenity> Amenity { get; set; }
+
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		var dateTimeNow = DateTime.Now;
@@ -94,6 +96,72 @@ public class ApplicationDbContext : DbContext
 			new VillaNumber
 			{
 				Villa_Number = 303,
+				VillaId = 3,
+			}
+		);
+
+		modelBuilder.Entity<Amenity>().HasData(
+			new Amenity
+			{
+				Id = 1,
+				Name = "Private Pool",
+				Description = "Enjoy your own private pool with stunning views.",
+				VillaId = 1,
+			},
+			new Amenity
+			{
+				Id = 2,
+				Name = "Free Wi-Fi",
+				Description = "Stay connected with complimentary high-speed internet access.",
+				VillaId = 1,
+			},
+			new Amenity
+			{
+				Id = 3,
+				Name = "Ocean View",
+				Description = "Wake up to breathtaking ocean views from your villa.",
+				VillaId = 2,
+			},
+			new Amenity
+			{
+				Id = 4,
+				Name = "Gourmet Kitchen",
+				Description = "Prepare delicious meals in a fully equipped gourmet kitchen.",
+				VillaId = 2,
+			},
+			new Amenity
+			{
+				Id = 5,
+				Name = "Spa Bath",
+				Description = "Relax and unwind in a luxurious spa bath.",
+				VillaId = 3,
+			},
+			new Amenity
+			{
+				Id = 6,
+				Name = "Fitness Center",
+				Description = "Stay active with access to a state-of-the-art fitness center.",
+				VillaId = 3,
+			},
+			new Amenity
+			{
+				Id = 7,
+				Name = "24/7 Concierge",
+				Description = "Experience exceptional service with our 24/7 concierge.",
+				VillaId = 1,
+			},
+			new Amenity
+			{
+				Id = 8,
+				Name = "Private Beach Access",
+				Description = "Enjoy exclusive access to a pristine private beach.",
+				VillaId = 2,
+			},
+			new Amenity
+			{
+				Id = 9,
+				Name = "In-Villa Dining",
+				Description = "Savor gourmet meals in the comfort of your villa with our in-villa dining service.",
 				VillaId = 3,
 			}
 		);

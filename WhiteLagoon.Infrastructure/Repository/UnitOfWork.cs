@@ -9,6 +9,8 @@ public class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
 
 	public IVillaNumberRepository VillaNumbers => new VillaNumberRepository(dbContext);
 
+	public IAmenityRepository Amenities => new AmenityRepository(dbContext);
+
 	public async Task SaveAsync()
 	{
 		await dbContext.SaveChangesAsync();

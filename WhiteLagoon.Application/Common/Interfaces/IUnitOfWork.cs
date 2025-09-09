@@ -6,5 +6,7 @@ public interface IUnitOfWork
 
 	IVillaNumberRepository VillaNumbers { get; }
 
+	IAmenityRepository Amenities { get; }
+
 	Task SaveAsync();
 }
