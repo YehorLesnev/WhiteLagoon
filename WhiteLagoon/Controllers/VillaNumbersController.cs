@@ -1,30 +1,31 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.Infrastructure.Data;
 using WhiteLagoon.ViewModels;
 
 namespace WhiteLagoon.Controllers;
 
-public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
+public class VillaNumbersController(IUnitOfWork unitOfWork) : Controller
 {
     public async Task<IActionResult> Index()
     {
-        var villaNumbers = await dbContext.VillaNumbers.Include(vn => vn.Villa).ToListAsync();
+        var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync(includeProperties: nameof(VillaNumber.Villa));
 
         return View(villaNumbers);
     }
 
     public async Task<IActionResult> Create()
     {
-        var villasSelectItems = await dbContext.Villas
+        var villasSelectItems = (await unitOfWork.Villas.GetAllAsync())
 			.Select(v => new SelectListItem
 			{
 				Value = v.Id.ToString(),
 				Text = v.Name.ToString()
 			})
-			.ToListAsync();
+			.ToList();
 
 		VillaNumberViewModel viewModel = new()
 		{
@@ -37,7 +38,7 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
     [HttpPost]
     public async Task<IActionResult> Create(VillaNumber villaNumber)
     {
-        var villaNumberAlreadyExists = await dbContext.VillaNumbers
+        var villaNumberAlreadyExists = await unitOfWork.VillaNumbers
             .AnyAsync(vn => vn.Villa_Number == villaNumber.Villa_Number && vn.VillaId == villaNumber.VillaId);
 
         if (villaNumberAlreadyExists)
@@ -49,19 +50,19 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
 
         if (!ModelState.IsValid || villaNumberAlreadyExists)
         {
-            var villasSelectItems = await dbContext.Villas
+            var villasSelectItems = (await unitOfWork.Villas.GetAllAsync())
                 .Select(v => new SelectListItem
                 {
                     Value = v.Id.ToString(),
                     Text = v.Name.ToString()
                 })
-                .ToListAsync();
+                .ToList();
 
             return View(new VillaNumberViewModel { VillaNumber = villaNumber, VillaList = villasSelectItems });
         }
 
-	    await dbContext.VillaNumbers.AddAsync(villaNumber);
-        await dbContext.SaveChangesAsync();
+	    await unitOfWork.VillaNumbers.AddAsync(villaNumber);
+        await unitOfWork.SaveAsync();
 
         TempData["success"] = "Villa number created successfully.";    
 
@@ -70,8 +71,8 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
 
 	public async Task<IActionResult> Update(int villaNumberId)
 	{
-		var villaList = await dbContext.Villas.ToListAsync();
-		var villaNumber = await dbContext.VillaNumbers.FirstOrDefaultAsync(x => x.Villa_Number == villaNumberId);
+		var villaList = await unitOfWork.Villas.GetAllAsync();
+		var villaNumber = await unitOfWork.VillaNumbers.GetAsync(x => x.Villa_Number == villaNumberId);
 
         if(villaNumber is null)
         {
@@ -98,14 +99,14 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
 		if (!ModelState.IsValid || villaNumber.Villa_Number == 0)
 		    return RedirectToAction(nameof(Index));
 
-        if(await dbContext.VillaNumbers.AnyAsync(v => v.Villa_Number == villaNumber.Villa_Number))
+        if(await unitOfWork.VillaNumbers.AnyAsync(v => v.Villa_Number == villaNumber.Villa_Number))
         {
             TempData["error"] = "Villa Number with same number already exists";
 		    return RedirectToAction(nameof(Index));
         }
 
-        dbContext.VillaNumbers.Update(villaNumber);
-        await dbContext.SaveChangesAsync();
+        unitOfWork.VillaNumbers.Update(villaNumber);
+        await unitOfWork.SaveAsync();
 
         TempData["success"] = "Villa Number updated successfully.";
 
@@ -114,12 +115,12 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
 
     public async Task<IActionResult> Delete(int villaNumberId)
     {
-        var villaNumber = await dbContext.VillaNumbers.FirstOrDefaultAsync(v => v.Villa_Number == villaNumberId);
+        var villaNumber = await unitOfWork.VillaNumbers.GetAsync(v => v.Villa_Number == villaNumberId);
 
         if(villaNumber is null)
 			return RedirectToAction(nameof(HomeController.Error), "Home");
 
-        var villaList = await dbContext.Villas.ToListAsync();
+        var villaList = await unitOfWork.Villas.GetAllAsync();
 
         var viewModel = new VillaNumberViewModel
 		{
@@ -143,12 +144,12 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var villaNumberToDelete = await dbContext.VillaNumbers.FirstOrDefaultAsync(v => v.Villa_Number == villaNumberViewModel.VillaNumber.Villa_Number);
+        var villaNumberToDelete = await unitOfWork.VillaNumbers.GetAsync(v => v.Villa_Number == villaNumberViewModel.VillaNumber.Villa_Number);
 
 		if (villaNumberToDelete is not null)
         {
-			dbContext.VillaNumbers.Remove(villaNumberToDelete);
-			await dbContext.SaveChangesAsync();
+			unitOfWork.VillaNumbers.Remove(villaNumberToDelete);
+			await unitOfWork.SaveAsync();
 
             TempData["success"] = "Villa deleted successfully.";
 		}

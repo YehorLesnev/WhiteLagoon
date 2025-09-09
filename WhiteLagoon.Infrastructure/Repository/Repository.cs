@@ -14,6 +14,14 @@ public class Repository<T>(ApplicationDbContext dbContext) : IRepository<T> wher
 		await dbSet.AddAsync(entity);
 	}
 
+	public async Task<bool> AnyAsync(Expression<Func<T, bool>>? filter = null)
+	{
+		if(filter is null)
+			return await dbSet.AnyAsync();
+
+		return await dbSet.AnyAsync(filter);
+	}
+
 	public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null)
 	{
 		IQueryable<T> query = dbSet;
