@@ -46,13 +46,12 @@
 			</div>
 		</nav>
 	</header>
-	<div class="container">
-		<main role="main" class="pb-3">
-			<partial name="_Notification" />
 
-			@RenderBody()
-		</main>
-	</div>
+	<main role="main">
+		<partial name="_Notification" />
+
+		@RenderBody()
+	</main>
 
 	<footer class="border-top footer text-muted bg-dark">
 		<div class="container text-center">

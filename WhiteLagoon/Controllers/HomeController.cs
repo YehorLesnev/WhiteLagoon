@@ -1,21 +1,15 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using WhiteLagoon.Models;
+using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Domain.Entities;
+using WhiteLagoon.ViewModels;
 
 namespace WhiteLagoon.Controllers;
 
-public class HomeController : Controller
+public class HomeController(IUnitOfWork unitOfWork) : Controller
 {
-    private readonly ILogger<HomeController> _logger;
-
-    public HomeController(ILogger<HomeController> logger)
+    public async Task<IActionResult> Index()
     {
-        _logger = logger;
-    }
-
-    public IActionResult Index()
-    {
-        return View();
+        return View(await GetHomeViewModelAsync());
     }
 
     public IActionResult Privacy()
@@ -27,4 +21,16 @@ public class HomeController : Controller
     {
         return View();
     }
+
+    private async Task<HomeViewModel> GetHomeViewModelAsync()
+    {
+        var homeViewModel = new HomeViewModel
+        {
+            VillaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities)),
+            Nights = 1,
+            CheckInDate = DateOnly.FromDateTime(DateTime.Now)
+		};
+
+        return homeViewModel;
+	}
 }
