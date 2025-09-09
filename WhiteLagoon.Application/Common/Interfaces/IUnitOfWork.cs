@@ -3,4 +3,6 @@
 public interface IUnitOfWork
 {
 	IVillaRepository Villas { get; }
+
+	Task SaveAsync();
 }

@@ -6,4 +6,9 @@ namespace WhiteLagoon.Infrastructure.Repository;
 public class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
 {
 	public IVillaRepository Villas => new VillaRepository(dbContext);
+
+	public async Task SaveAsync()
+	{
+		await dbContext.SaveChangesAsync();
+	}
 }

@@ -31,7 +31,7 @@ public class VillasController(IUnitOfWork unitOfWork) : Controller
 		}
 
 	    await unitOfWork.Villas.AddAsync(villa);
-        await unitOfWork.Villas.SaveAsync();
+        await unitOfWork.SaveAsync();
 
         TempData["success"] = "Villa created successfully.";    
 
@@ -61,7 +61,7 @@ public class VillasController(IUnitOfWork unitOfWork) : Controller
 		}
 
         unitOfWork.Villas.Update(villa);
-        await unitOfWork.Villas.SaveAsync();
+        await unitOfWork.SaveAsync();
 
         TempData["success"] = "Villa updated successfully.";
 
@@ -86,7 +86,7 @@ public class VillasController(IUnitOfWork unitOfWork) : Controller
 		if (villaToDelete is not null)
         {
 		    unitOfWork.Villas.Remove(villa);
-			await unitOfWork.Villas.SaveAsync();
+			await unitOfWork.SaveAsync();
 
             TempData["success"] = "Villa deleted successfully.";
 

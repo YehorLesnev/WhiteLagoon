@@ -11,9 +11,4 @@ public class VillaRepository(ApplicationDbContext dbContext)
 	{
 		dbSet.Update(entity);
 	}
-
-	public async Task SaveAsync()
-	{
-		await dbContext.SaveChangesAsync();
-	}
 }
