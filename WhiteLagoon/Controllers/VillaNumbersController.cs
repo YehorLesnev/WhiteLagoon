@@ -68,63 +68,93 @@ public class VillaNumbersController(ApplicationDbContext dbContext) : Controller
 		return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Update(int villaId)
-    {
-        Villa? villa = await dbContext.Villas.FirstOrDefaultAsync(v => v.Id == villaId);
+	public async Task<IActionResult> Update(int villaNumberId)
+	{
+		var villaList = await dbContext.Villas.ToListAsync();
+		var villaNumber = await dbContext.VillaNumbers.FirstOrDefaultAsync(x => x.Villa_Number == villaNumberId);
 
-        if(villa is null)
-			return RedirectToAction(nameof(HomeController.Error), "Home");
+        if(villaNumber is null)
+        {
+            TempData["error"] = "Villa number not found";
+            return RedirectToAction("Error", "Home");
+        }
 
-		return View(villa);
-    }
+		var viewModel = new VillaNumberViewModel
+		{
+			VillaList = [.. villaList.Select(x => new SelectListItem
+			{
+				Text = x.Name,
+				Value = x.Id.ToString()
+			})],
+			VillaNumber = villaNumber
+		};
+
+		return View(viewModel);
+	}
     
     [HttpPost]
-	public async Task<IActionResult> Update(Villa villa)
+	public async Task<IActionResult> Update(VillaNumber villaNumber)
     {
-		if (!ModelState.IsValid || villa.Id == 0)
-			return View();
+		if (!ModelState.IsValid || villaNumber.Villa_Number == 0)
+		    return RedirectToAction(nameof(Index));
 
-		if (villa.Name == villa.Description)
+        if(await dbContext.VillaNumbers.AnyAsync(v => v.Villa_Number == villaNumber.Villa_Number))
         {
-            ModelState.AddModelError(nameof(Villa.Name), "The Name and Description cannot be the same.");
-			return View(villa);
-		}
+            TempData["error"] = "Villa Number with same number already exists";
+		    return RedirectToAction(nameof(Index));
+        }
 
-        dbContext.Villas.Update(villa);
+        dbContext.VillaNumbers.Update(villaNumber);
         await dbContext.SaveChangesAsync();
 
-        TempData["success"] = "Villa updated successfully.";
+        TempData["success"] = "Villa Number updated successfully.";
 
 		return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Delete(int villaId)
+    public async Task<IActionResult> Delete(int villaNumberId)
     {
-        Villa? villa = await dbContext.Villas.FirstOrDefaultAsync(v => v.Id == villaId);
+        var villaNumber = await dbContext.VillaNumbers.FirstOrDefaultAsync(v => v.Villa_Number == villaNumberId);
 
-        if(villa is null)
+        if(villaNumber is null)
 			return RedirectToAction(nameof(HomeController.Error), "Home");
 
-		return View(villa);
+        var villaList = await dbContext.Villas.ToListAsync();
+
+        var viewModel = new VillaNumberViewModel
+		{
+			VillaList = [.. villaList.Select(x => new SelectListItem
+			{
+				Text = x.Name,
+				Value = x.Id.ToString()
+			})],
+			VillaNumber = villaNumber
+		};
+
+		return View(viewModel);
     }
 
     [HttpPost]
-	public async Task<IActionResult> Delete(Villa villa)
+	public async Task<IActionResult> Delete(VillaNumberViewModel villaNumberViewModel)
     {
-        var villaToDelete = await dbContext.Villas.FirstOrDefaultAsync(v => v.Id == villa.Id);
-
-		if (villaToDelete is not null)
+        if(villaNumberViewModel.VillaNumber is null)
         {
-			dbContext.Villas.Remove(villaToDelete);
+            TempData["error"] = "Villa not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var villaNumberToDelete = await dbContext.VillaNumbers.FirstOrDefaultAsync(v => v.Villa_Number == villaNumberViewModel.VillaNumber.Villa_Number);
+
+		if (villaNumberToDelete is not null)
+        {
+			dbContext.VillaNumbers.Remove(villaNumberToDelete);
 			await dbContext.SaveChangesAsync();
 
             TempData["success"] = "Villa deleted successfully.";
-
-			return RedirectToAction(nameof(Index));
 		}
 
         TempData["error"] = "Villa not found.";
 
-		return View();
+	    return RedirectToAction(nameof(Index));
     }
 }
