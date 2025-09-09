@@ -1,16 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Domain.Entities;
-using WhiteLagoon.Infrastructure.Data;
 
 namespace WhiteLagoon.Controllers;
 
-public class VillasController(IVillaRepository villaRepository) : Controller
+public class VillasController(IUnitOfWork unitOfWork) : Controller
 {
     public async Task<IActionResult> Index()
     {
-        var villas = await villaRepository.GetAllAsync();
+        var villas = await unitOfWork.Villas.GetAllAsync();
 
         return View(villas);
     }
@@ -32,8 +30,8 @@ public class VillasController(IVillaRepository villaRepository) : Controller
 			return View(villa);
 		}
 
-	    await villaRepository.AddAsync(villa);
-        await villaRepository.SaveAsync();
+	    await unitOfWork.Villas.AddAsync(villa);
+        await unitOfWork.Villas.SaveAsync();
 
         TempData["success"] = "Villa created successfully.";    
 
@@ -42,7 +40,7 @@ public class VillasController(IVillaRepository villaRepository) : Controller
 
     public async Task<IActionResult> Update(int villaId)
     {
-        Villa? villa = await villaRepository.GetAsync(v => v.Id == villaId);
+        Villa? villa = await unitOfWork.Villas.GetAsync(v => v.Id == villaId);
 
         if(villa is null)
 			return RedirectToAction(nameof(HomeController.Error), "Home");
@@ -62,8 +60,8 @@ public class VillasController(IVillaRepository villaRepository) : Controller
 			return View(villa);
 		}
 
-        villaRepository.Update(villa);
-        await villaRepository.SaveAsync();
+        unitOfWork.Villas.Update(villa);
+        await unitOfWork.Villas.SaveAsync();
 
         TempData["success"] = "Villa updated successfully.";
 
@@ -72,8 +70,8 @@ public class VillasController(IVillaRepository villaRepository) : Controller
 
     public async Task<IActionResult> Delete(int villaId)
     {
-        Villa? villa = await villaRepository.GetAsync(v => v.Id == villaId);
-
+        Villa? villa = await unitOfWork.Villas.GetAsync(v => v.Id == villaId);
+        
         if(villa is null)
 			return RedirectToAction(nameof(HomeController.Error), "Home");
 
@@ -83,12 +81,12 @@ public class VillasController(IVillaRepository villaRepository) : Controller
     [HttpPost]
 	public async Task<IActionResult> Delete(Villa villa)
     {
-        var villaToDelete = await villaRepository.GetAsync(v => v.Id == villa.Id);
-
+        var villaToDelete = await unitOfWork.Villas.GetAsync(v => v.Id == villa.Id);
+        
 		if (villaToDelete is not null)
         {
-		    villaRepository.Remove(villa);
-			await villaRepository.SaveAsync();
+		    unitOfWork.Villas.Remove(villa);
+			await unitOfWork.Villas.SaveAsync();
 
             TempData["success"] = "Villa deleted successfully.";
 
