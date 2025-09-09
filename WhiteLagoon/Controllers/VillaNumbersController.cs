@@ -29,6 +29,7 @@ public class VillaNumbersController(IUnitOfWork unitOfWork) : Controller
 
 		VillaNumberViewModel viewModel = new()
 		{
+            VillaNumber = new(),
             VillaList = villasSelectItems
         };
 
