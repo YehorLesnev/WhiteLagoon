@@ -11,10 +11,12 @@ public class VillaNumber
 	public int Villa_Number { get; set; }
 
 	[ForeignKey("Villa")]
+	[Display(Name = "Villa")]
 	public int VillaId { get; set; }
 
 	[ValidateNever]
 	public Villa Villa { get; set; }
 
+	[Display(Name = "Special Details")]
 	public string? SpecialDeatils { get; set; }
 }
