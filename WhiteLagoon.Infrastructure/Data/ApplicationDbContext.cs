@@ -4,7 +4,7 @@ using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
 	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
 	{
@@ -15,6 +15,8 @@ public class ApplicationDbContext : IdentityDbContext
 	public DbSet<VillaNumber> VillaNumbers { get; set; }
 
 	public DbSet<Amenity> Amenity { get; set; }
+
+	public DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
