@@ -16,7 +16,7 @@ public class AccountController(
 {
 	public IActionResult Login(string? returnUrl = null)
 	{
-		returnUrl??=Url.Content("~/");
+		returnUrl ??= Url.Content("~/");
 
 		var loginViewModel = new LoginViewModel
 		{
@@ -26,24 +26,115 @@ public class AccountController(
 		return View();
 	}
 
+	[HttpPost]
+	public async Task<IActionResult> Login(LoginViewModel loginViewModel)
+	{
+		if(!ModelState.IsValid)
+		{
+			return View(loginViewModel);
+		}
+		
+		var result = await signInManager
+				.PasswordSignInAsync(loginViewModel.Email, loginViewModel.Password, loginViewModel.RememberMe, false);
+
+		if (result.Succeeded)
+		{
+			if (!string.IsNullOrEmpty(loginViewModel.RedirectUrl))
+			{
+				return LocalRedirect(loginViewModel.RedirectUrl);
+			}
+
+			return RedirectToAction(nameof(HomeController.Index), "Home");
+		}
+
+		ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+
+		return View(loginViewModel);
+	}
+
+
+
 	public async Task<IActionResult> Register()
 	{
-		if(!await roleManager.RoleExistsAsync(RolesConstants.Admin))
+		if (!await roleManager.RoleExistsAsync(RolesConstants.Admin))
 			await roleManager.CreateAsync(new IdentityRole(RolesConstants.Admin));
 
-		if(!await roleManager.RoleExistsAsync(RolesConstants.Customer))
+		if (!await roleManager.RoleExistsAsync(RolesConstants.Customer))
 			await roleManager.CreateAsync(new IdentityRole(RolesConstants.Customer));
 
-		var roles = await roleManager.Roles.ToListAsync();
-		var viewModel = new RegisterViewModel
+		var viewModel = await GetRegisterViewModelAsync();
+
+		return View(viewModel);
+	}
+
+	[HttpPost]
+	public async Task<IActionResult> Register(RegisterViewModel registerViewModel)
+	{
+		if (!ModelState.IsValid)
 		{
-			Roles = roles.Select(r => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+			return View(await GetRegisterViewModelAsync(registerViewModel));
+		}
+
+		ApplicationUser user = new()
+		{
+			Name = registerViewModel.Name,
+			Email = registerViewModel.Email,
+			PhoneNumber = registerViewModel.PhoneNumber,
+			NormalizedEmail = registerViewModel.Email.ToUpper(),
+			EmailConfirmed = true,
+			UserName = registerViewModel.Email,
+			CreatedAt = DateTime.Now
+		};
+
+		var result = await userManager.CreateAsync(user, registerViewModel.Password);
+
+		if (!result.Succeeded)
+		{
+			foreach (var error in result.Errors)
+			{
+				ModelState.AddModelError(string.Empty, error.Description);
+			}
+
+			return View(await GetRegisterViewModelAsync(registerViewModel));
+		}
+
+		if (!string.IsNullOrEmpty(registerViewModel.Role))
+		{
+			await userManager.AddToRoleAsync(user, registerViewModel.Role);
+		}
+		else
+		{
+			await userManager.AddToRoleAsync(user, RolesConstants.Customer);
+		}
+
+		await signInManager.SignInAsync(user, false);
+
+		if (!string.IsNullOrEmpty(registerViewModel.RedirectUrl))
+		{
+			return LocalRedirect(registerViewModel.RedirectUrl);
+		}
+
+		return RedirectToAction(nameof(HomeController.Index), "Home");
+	}
+
+	private async Task<RegisterViewModel> GetRegisterViewModelAsync(RegisterViewModel? viewModel = null)
+	{
+		var roles = (await roleManager.Roles.ToListAsync())
+			.Select(r => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
 			{
 				Text = r.Name,
 				Value = r.Name
-			})
-		};
+			});
 
-		return View(viewModel);
+		if (viewModel is not null)
+		{
+			viewModel.Roles = roles;
+			return viewModel;
+		}
+
+		return new RegisterViewModel
+		{
+			Roles = roles
+		};
 	}
 }
