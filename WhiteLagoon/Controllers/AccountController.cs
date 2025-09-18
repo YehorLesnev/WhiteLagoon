@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
@@ -52,7 +53,11 @@ public class AccountController(
 		return View(loginViewModel);
 	}
 
-
+	public async Task<IActionResult> Logout()
+	{
+		await signInManager.SignOutAsync();
+		return RedirectToAction(nameof(HomeController.Index), "Home");
+	}
 
 	public async Task<IActionResult> Register()
 	{
