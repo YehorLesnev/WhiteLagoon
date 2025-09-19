@@ -12,6 +12,7 @@
 	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 	<link rel="stylesheet" href="~/WhiteLagoon.styles.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/css/spinner.css" />
 </head>
 <body>
 	<header>
@@ -49,6 +50,8 @@
 	</header>
 
 	<main role="main">
+		<div class="loading spinner" style="display: none;">Loading</div>
+
 		<partial name="_Notification" />
 
 		@RenderBody()
