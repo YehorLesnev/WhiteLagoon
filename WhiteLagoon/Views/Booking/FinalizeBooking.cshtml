@@ -2,7 +2,6 @@
 
 <div class="container pt-4 mt-0 mt-lg-4">
 	<div class="row" style="border: 1px solid #aaa;">
-
 		<div class="col-12 col-lg-7 p-4 2 mt-4 mt-md-0">
 			<div class="row p-1 my-1 " style="border-radius:20px; ">
 				<div class="col-6">
@@ -28,6 +27,14 @@
 		</div>
 		<div class="col-12 col-lg-5 p-4 2 mt-4 mt-md-0" style="border-left:1px solid #aaa">
 			<form method="post">
+				<input type="hidden" asp-for="VillaId" />
+				<input type="hidden" asp-for="CheckInDate" />
+				<input type="hidden" asp-for="CheckOutDate" />
+				<input type="hidden" asp-for="Nights" />
+				<input type="hidden" asp-for="TotalCost" />
+				<input type="hidden" asp-for="UserId" />
+				<input type="hidden" asp-for="VillaId" />
+
 				<div class="row pt-1 mb-3 " style="border-radius:20px; ">
 					<div class="col-12">
 						<h3 class="text-success">Enter Booking Details</h3>

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Controllers;
@@ -39,9 +40,34 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 			PhoneNumber = user.PhoneNumber,
 			Email = user.Email,
 			Name = user.Name,
-			User = user
 		};
 
 		return View(booking);
+	}
+
+	[Authorize]
+	[HttpPost]
+	public async Task<IActionResult> FinalizeBooking(Booking booking)
+	{
+		var villa = await unitOfWork.Villas.GetAsync(v => v.Id == booking.VillaId, includeProperties: nameof(Villa.VillaAmenities));
+
+		if(villa is null)
+		{
+			return NotFound();
+		}
+
+		booking.TotalCost = villa.Price * booking.Nights;
+		booking.Status = BookingStatusConstants.Pending;
+
+		await unitOfWork.Bookings.AddAsync(booking);
+		await unitOfWork.SaveAsync();
+
+		return RedirectToAction(nameof(BookingConfirmation), new { bookingId = booking.Id });
+	}
+
+	[Authorize]
+	public async Task<IActionResult> BookingConfirmation(int bookingId)
+	{
+		return View(bookingId);
 	}
 }
