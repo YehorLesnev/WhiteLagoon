@@ -8,5 +8,7 @@ public interface IUnitOfWork
 
 	IAmenityRepository Amenities { get; }
 
+	IBookingRepository Bookings { get; }
+
 	Task SaveAsync();
 }
