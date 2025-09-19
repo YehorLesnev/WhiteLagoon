@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Stripe.Checkout;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
@@ -62,12 +63,61 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 		await unitOfWork.Bookings.AddAsync(booking);
 		await unitOfWork.SaveAsync();
 
-		return RedirectToAction(nameof(BookingConfirmation), new { bookingId = booking.Id });
+		var domain = $"{Request.Scheme}://{Request.Host.Value}";
+		var options = new SessionCreateOptions
+		{
+			LineItems = new List<SessionLineItemOptions>()
+			{
+				new SessionLineItemOptions
+				{
+					PriceData = new SessionLineItemPriceDataOptions          
+					{
+						UnitAmount = (long)(booking.TotalCost * 100),
+						Currency = "usd",
+						ProductData = new SessionLineItemPriceDataProductDataOptions
+						{
+							Name = villa.Name,
+							Description = villa.Description,
+							//Images = [$"{domain}/{villa.ImageUrl}"],
+						},
+					},
+					Quantity = 1,
+				},
+			},
+			Mode = "payment",
+			SuccessUrl = $"{domain}/Booking/BookingConfirmation?bookingId={booking.Id}",
+			CancelUrl =  $"{domain}/Booking/FinalizeBooking?villaId={booking.VillaId}&checkInDate={booking.CheckInDate}&nights={booking.Nights}",
+		};
+
+		var service = new SessionService();
+		Session session = service.Create(options);
+
+		await unitOfWork.Bookings.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
+		await unitOfWork.SaveAsync();	
+
+		Response.Headers.Add("Location", session.Url);
+
+		return new StatusCodeResult(303);
 	}
 
 	[Authorize]
 	public async Task<IActionResult> BookingConfirmation(int bookingId)
 	{
+		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId, includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+
+		if(booking is not null && booking.Status.Equals(BookingStatusConstants.Pending, StringComparison.InvariantCultureIgnoreCase))
+		{
+			var service = new SessionService();
+			var session = service.Get(booking.StripeSessionId);
+			
+			if (session.PaymentStatus == "paid")
+			{ 
+				await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Approved);
+				await unitOfWork.Bookings.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
+				await unitOfWork.SaveAsync();
+			}
+		}
+
 		return View(bookingId);
 	}
 }
