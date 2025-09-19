@@ -13,6 +13,7 @@
             <div class="row pt-3">
                 <div class="col-md-12">
                     <form class="row" method="post">
+                        <input hidden asp-for="RedirectUrl" />
                         <div asp-validation-summary="ModelOnly"></div>
                         <div class="form-floating mb-3 col-md-12">
                             <input asp-for="Email" class="form-control" aria-required="true" />

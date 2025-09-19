@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using WhiteLagoon.Application.Common.Interfaces;
@@ -13,18 +14,17 @@ public class AccountController(
 	IUnitOfWork unitOfWork,
 	UserManager<ApplicationUser> userManager,
 	SignInManager<ApplicationUser> signInManager,
-	RoleManager<IdentityRole> roleManager) : Controller
+	RoleManager<IdentityRole> roleManager,
+	IUrlHelperFactory urlHelperFactory) : Controller
 {
 	public IActionResult Login(string? returnUrl = null)
 	{
-		returnUrl ??= Url.Content("~/");
-
 		var loginViewModel = new LoginViewModel
 		{
-			RedirectUrl = returnUrl
+			RedirectUrl = GetRedirectUrl(returnUrl)
 		};
 
-		return View();
+		return View(loginViewModel);
 	}
 
 	[HttpPost]
@@ -59,7 +59,7 @@ public class AccountController(
 		return RedirectToAction(nameof(HomeController.Index), "Home");
 	}
 
-	public async Task<IActionResult> Register()
+	public async Task<IActionResult> Register(string? returnUrl = null)
 	{
 		if (!await roleManager.RoleExistsAsync(RolesConstants.Admin))
 			await roleManager.CreateAsync(new IdentityRole(RolesConstants.Admin));
@@ -67,7 +67,7 @@ public class AccountController(
 		if (!await roleManager.RoleExistsAsync(RolesConstants.Customer))
 			await roleManager.CreateAsync(new IdentityRole(RolesConstants.Customer));
 
-		var viewModel = await GetRegisterViewModelAsync();
+		var viewModel = await GetRegisterViewModelAsync(returnUrl: returnUrl);
 
 		return View(viewModel);
 	}
@@ -122,7 +122,7 @@ public class AccountController(
 		return RedirectToAction(nameof(HomeController.Index), "Home");
 	}
 
-	private async Task<RegisterViewModel> GetRegisterViewModelAsync(RegisterViewModel? viewModel = null)
+	private async Task<RegisterViewModel> GetRegisterViewModelAsync(RegisterViewModel? viewModel = null, string? returnUrl = null)
 	{
 		var roles = (await roleManager.Roles.ToListAsync())
 			.Select(r => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
@@ -139,12 +139,21 @@ public class AccountController(
 
 		return new RegisterViewModel
 		{
-			Roles = roles
+			Roles = roles,
+			RedirectUrl = GetRedirectUrl(viewModel?.RedirectUrl ?? returnUrl)
 		};
 	}
 
 	public IActionResult AccessDenied()
 	{
 		return View();
+	}
+
+	private string GetRedirectUrl(string? returnUrl)
+	{
+		var urlHelper = urlHelperFactory.GetUrlHelper(ControllerContext);
+		return returnUrl ?? (urlHelper.IsLocalUrl(Request.Headers.Referer) 
+			? Url.Content(Request.Headers.Referer) 
+			: "~/");
 	}
 }
