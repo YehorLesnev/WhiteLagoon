@@ -41,7 +41,7 @@ public class Booking
 	public DateOnly CheckInDate { get; set; }
 
 	[Required]
-	public DateOnly CheckOutDate => CheckInDate.AddDays(Nights);
+	public DateOnly CheckOutDate {get; set; }
 
 	public bool IsPaymentSuccessful { get; set; } = false;
 

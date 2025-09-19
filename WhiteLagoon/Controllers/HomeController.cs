@@ -13,22 +13,6 @@ public class HomeController(IUnitOfWork unitOfWork) : Controller
     }
 
     [HttpPost]
-	public async Task<IActionResult> Index(HomeViewModel homeViewModel)
-    {
-        homeViewModel.VillaList ??= (await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities))) ?? [];
-
-		foreach (var villa in homeViewModel?.VillaList ?? [])
-        {
-            if(villa.Id % 2 == 0)
-            {
-                villa.IsAvailable = false;
-            }
-		}
-
-		return View(homeViewModel);
-    }
-
-    [HttpPost]
 	public async Task<IActionResult> GetVillasByDate(int nights, DateOnly checkInDate)
     {
         var villaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities));
