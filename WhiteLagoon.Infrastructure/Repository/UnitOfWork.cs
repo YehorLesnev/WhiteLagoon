@@ -13,6 +13,8 @@ public class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
 
 	public IBookingRepository Bookings => new BookingRepository(dbContext);
 
+	public IApplicationUserRepository Users => new ApplicationUserRepository(dbContext);
+
 	public async Task SaveAsync()
 	{
 		await dbContext.SaveChangesAsync();

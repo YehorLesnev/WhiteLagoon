@@ -10,5 +10,7 @@ public interface IUnitOfWork
 
 	IBookingRepository Bookings { get; }
 
+	IApplicationUserRepository Users { get; }
+
 	Task SaveAsync();
 }
