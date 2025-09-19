@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.Infrastructure.Data;
 using WhiteLagoon.ViewModels;
 
 namespace WhiteLagoon.Controllers;
 
+[Authorize(Roles = RolesConstants.Admin)]
 public class VillaNumbersController(IUnitOfWork unitOfWork) : Controller
 {
     public async Task<IActionResult> Index()

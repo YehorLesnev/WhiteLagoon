@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Controllers;
 
+[Authorize(Roles = RolesConstants.Admin)]
 public class VillasController(
     IUnitOfWork unitOfWork,
     IWebHostEnvironment webHostEnvironment) : Controller

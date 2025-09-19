@@ -142,4 +142,9 @@ public class AccountController(
 			Roles = roles
 		};
 	}
+
+	public IActionResult AccessDenied()
+	{
+		return View();
+	}
 }

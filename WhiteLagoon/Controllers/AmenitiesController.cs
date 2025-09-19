@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.ViewModels;
 
 namespace WhiteLagoon.Controllers;
 
+[Authorize(Roles = RolesConstants.Admin)]
 public class AmenitiesController(IUnitOfWork unitOfWork) : Controller
 {
     public async Task<IActionResult> Index()
