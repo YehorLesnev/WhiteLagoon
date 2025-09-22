@@ -10,6 +10,12 @@ namespace WhiteLagoon.Controllers;
 public class BookingController(IUnitOfWork unitOfWork) : Controller
 {
 	[Authorize]
+	public IActionResult Index()
+	{
+		return View();
+	}	
+
+	[Authorize]
 	public async Task<IActionResult> FinalizeBooking(int villaId, DateOnly checkInDate, int nights)
 	{
 		var claimsIdentity = User.Identity as System.Security.Claims.ClaimsIdentity;
@@ -120,4 +126,32 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 
 		return View(bookingId);
 	}
+
+	#region API Calls
+
+	[HttpGet]
+	[Authorize]
+	public async Task<IActionResult> GetAll(string? status = null)
+	{
+		IEnumerable<Booking> bookings;
+		var isAdmin = User.IsInRole(RolesConstants.Admin);
+
+		if(isAdmin)
+		{
+			bookings = await unitOfWork.Bookings
+				.GetAllAsync(includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+		}
+		else
+		{
+			var claimsIdentity = User.Identity as System.Security.Claims.ClaimsIdentity;
+			var userId = claimsIdentity?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+			bookings = await unitOfWork.Bookings
+				.GetAllAsync(b => b.UserId == userId, includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+		}
+
+		return Json(new { data = bookings });
+	}
+
+	#endregion
 }
