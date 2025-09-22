@@ -1,4 +1,43 @@
-﻿
+﻿@using WhiteLagoon.Application.Utility
+
+@{
+	var status = Context.Request.Query["status"].ToString();
+
+	string approvedClass = "";
+	string pendingClass = "";
+	string checkedInClass = "";
+	string completedClass = "";
+	string cancelledClass = "";
+	string refundedClass = "";
+
+	const string baseClass = "text-white bg-success";
+
+	switch (status)
+	{
+		case BookingStatusConstants.Approved:
+			approvedClass = baseClass;
+			break;
+		case BookingStatusConstants.Pending:
+			pendingClass = baseClass;
+			break;
+		case BookingStatusConstants.CheckedIn:
+			checkedInClass = baseClass;
+			break;
+		case BookingStatusConstants.Completed:
+			completedClass = baseClass;
+			break;
+		case BookingStatusConstants.Cancelled:
+			cancelledClass = baseClass;
+			break;
+		case BookingStatusConstants.Refunded:
+			refundedClass = baseClass;
+			break;
+		default:
+			pendingClass = baseClass;
+			break;
+	}
+}
+
 <div class="w-100 card border-0 p-4">
 	<div class="card-header bg-success bg-gradient m-lg-0 py-3">
 		<div class="col-12 text-center">
@@ -10,6 +49,40 @@
 </div>
 
 <div class="card-body border p-4">
+	<div class="d-flex justify-content-end pb-4 pt-2">
+		<ul class="list-group list-group-horizontal-sm">
+			<a style="text-decoration: none;" asp-controller="Booking" asp-action="Index" asp-route-status="@BookingStatusConstants.Pending">
+			<li class="list-group-item @pendingClass">
+				@BookingStatusConstants.Pending
+			</li>
+			</a>
+			<a style="text-decoration: none;" asp-controller="Booking" asp-action="Index" asp-route-status="@BookingStatusConstants.Approved">
+			<li class="list-group-item @approvedClass">
+				@BookingStatusConstants.Approved
+			</li>
+			</a>
+			<a style="text-decoration: none;" asp-controller="Booking" asp-action="Index" asp-route-status="@BookingStatusConstants.CheckedIn">
+			<li class="list-group-item @checkedInClass">
+				@BookingStatusConstants.CheckedIn
+			</li>
+			</a>
+			<a style="text-decoration: none;" asp-controller="Booking" asp-action="Index" asp-route-status="@BookingStatusConstants.Completed">
+			<li class="list-group-item @completedClass">
+				@BookingStatusConstants.Completed
+			</li>
+			</a>
+			<a style="text-decoration: none;" asp-controller="Booking" asp-action="Index" asp-route-status="@BookingStatusConstants.Cancelled">
+			<li class="list-group-item @cancelledClass">
+				@BookingStatusConstants.Cancelled
+			</li>
+			</a>
+			<a style="text-decoration: none;" asp-controller="Booking" asp-action="Index" asp-route-status="@BookingStatusConstants.Refunded">
+			<li class="list-group-item @refundedClass">
+				@BookingStatusConstants.Refunded
+			</li>
+			</a>
+		</ul>
+	</div>
 	<table id="tblBookings" class="table table-bordered table-striped">
 		<thead>
 			<tr>
@@ -29,10 +102,10 @@
 					Check In Date
 				</th>
 				<th>
-					Status
+					Nights
 				</th>
 				<th>
-					Nights
+					Status
 				</th>
 				<th>
 					Total
@@ -42,7 +115,6 @@
 			</tr>
 		</thead>
 		<tbody>
-		
 		</tbody>
 	</table>
 </div>

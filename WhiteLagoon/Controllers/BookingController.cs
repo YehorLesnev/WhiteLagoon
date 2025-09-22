@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
+using System.Linq.Expressions;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility;
 using WhiteLagoon.Domain.Entities;
@@ -136,7 +137,7 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 		IEnumerable<Booking> bookings;
 		var isAdmin = User.IsInRole(RolesConstants.Admin);
 
-		if(isAdmin)
+		if (isAdmin)
 		{
 			bookings = await unitOfWork.Bookings
 				.GetAllAsync(includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
@@ -147,7 +148,13 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 			var userId = claimsIdentity?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
 			bookings = await unitOfWork.Bookings
-				.GetAllAsync(b => b.UserId == userId, includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+				.GetAllAsync(b => b.UserId == userId, 
+							includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+		}
+
+		if(!string.IsNullOrEmpty(status))
+		{
+			bookings = bookings.Where(b => b.Status.Equals(status, StringComparison.InvariantCultureIgnoreCase));
 		}
 
 		return Json(new { data = bookings });

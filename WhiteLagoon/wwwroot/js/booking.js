@@ -7,21 +7,24 @@ document.addEventListener("DOMContentLoaded", function () {
 function loadDataTable() {
     const bookingTable = document.getElementById("tblBookings");
 
-    if(!bookingTable)
+    if (!bookingTable)
         return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
 
     dataTable = $('#tblBookings').DataTable({
         "ajax": {
-            "url": "/booking/getall",
+            "url": "/booking/getall?status=" + status,
         },
         columns: [
             { data: "id", width: "3%" },
             { data: "name", width: "10%" },
             { data: "phoneNumber", width: "5%" },
             { data: "email", width: "15%" },
-            { data: "status", width: "8%" },
             { data: "checkInDate", width: "7%" },
             { data: "nights", width: "5%" },
+            { data: "status", width: "8%" },
             { data: "totalCost", render: $.fn.dataTable.render.number(',', '.', 2), width: "5%" },
             { 
                 data: "id",
