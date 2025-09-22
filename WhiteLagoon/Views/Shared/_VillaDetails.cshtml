@@ -17,7 +17,7 @@
 				</p>
 				<p class="h5 text-white">Villa Amenities</p>
 				<ul>
-					@foreach (var amenity in villa.VillaAmenities)
+					@foreach (var amenity in villa?.VillaAmenities ?? [])
 					{
 						<li>@amenity.Name</li>
 					}

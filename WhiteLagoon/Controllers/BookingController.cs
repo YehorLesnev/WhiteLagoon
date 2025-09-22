@@ -128,6 +128,18 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 		return View(bookingId);
 	}
 
+	[Authorize]
+	public async Task<IActionResult> Details(int bookingId)
+	{
+		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId, 
+									includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+
+		if(booking is null)
+			return NotFound();
+
+		return View(booking);
+	}
+
 	#region API Calls
 
 	[HttpGet]
