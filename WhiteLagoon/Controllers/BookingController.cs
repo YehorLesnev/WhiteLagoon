@@ -147,6 +147,42 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 		return View(booking);
 	}
 
+	[HttpPost]
+	[Authorize(Roles = RolesConstants.Admin)]
+	public async Task<IActionResult> CheckIn(Booking booking)
+	{
+		await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.CheckedIn, booking.VillaNumber);
+		await unitOfWork.SaveAsync();
+
+		TempData["success"] = "Booking checked in successfully.";
+
+		return RedirectToAction(nameof(Details), new { bookingId = booking.Id });
+	}
+
+	[HttpPost]
+	[Authorize(Roles = RolesConstants.Admin)]
+	public async Task<IActionResult> CheckOut(Booking booking)
+	{
+		await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Completed, booking.VillaNumber);
+		await unitOfWork.SaveAsync();
+
+		TempData["success"] = "Booking checked out successfully.";
+
+		return RedirectToAction(nameof(Details), new { bookingId = booking.Id });
+	}
+
+	[HttpPost]
+	[Authorize(Roles = RolesConstants.Admin)]
+	public async Task<IActionResult> CancelBooking(Booking booking)
+	{
+		await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Cancelled, booking.VillaNumber);
+		await unitOfWork.SaveAsync();
+
+		TempData["success"] = "Booking cancelled successfully.";
+
+		return RedirectToAction(nameof(Details), new { bookingId = booking.Id });
+	}
+
 	private async Task<List<int>> AssignAvailableVillaNumberByVilla(int villaId)
 	{
 		List<int> availableVillaNumbers = [];
