@@ -4,6 +4,7 @@ using Stripe.Checkout;
 using System.Linq.Expressions;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
+using WhiteLagoon.Application.Utility.Helpers;
 using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Controllers;
@@ -66,6 +67,21 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 
 		booking.TotalCost = villa.Price * booking.Nights;
 		booking.Status = BookingStatusConstants.Pending;
+
+		var villaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities));
+		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync();
+		var bookings = await unitOfWork.Bookings.GetAllAsync(b =>
+			b.Status == BookingStatusConstants.Approved || b.Status == BookingStatusConstants.CheckedIn);
+
+		int roomsAvailable = VillaRoomsAvailabilityHelper.GetNumberOfAvailableRooms(villa.Id, villaNumbers, booking.CheckInDate, booking.Nights, bookings);
+
+		if(roomsAvailable <= 0)
+		{
+			TempData["error"] = "Rooms has been sold out! Please choose different dates or a different villa.";
+			return RedirectToAction(nameof(FinalizeBooking), new { villaId = booking.VillaId, checkInDate = booking.CheckInDate, nights = booking.Nights });
+		}
+
+		villa.IsAvailable = roomsAvailable > 0;
 
 		await unitOfWork.Bookings.AddAsync(booking);
 		await unitOfWork.SaveAsync();
