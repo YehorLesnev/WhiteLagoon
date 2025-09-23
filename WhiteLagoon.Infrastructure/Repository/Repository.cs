@@ -22,7 +22,7 @@ public class Repository<T>(ApplicationDbContext dbContext) : IRepository<T> wher
 		return await dbSet.AnyAsync(filter);
 	}
 
-	public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null)
+	public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null)
 	{
 		IQueryable<T> query = dbSet;
 

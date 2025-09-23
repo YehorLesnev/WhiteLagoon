@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
+using System.Globalization;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.Extensions.WebApplicationExtensions;
 using WhiteLagoon.Infrastructure.Data;
 using WhiteLagoon.Infrastructure.Repository;
-using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,16 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 var app = builder.Build();
+
+var defaultCulture = new CultureInfo("en-GB");
+defaultCulture.DateTimeFormat.ShortDatePattern = "MM/dd/yyyy";
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(defaultCulture),
+	SupportedCultures = [defaultCulture],
+	SupportedUICultures = [defaultCulture]
+});
 
 StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
 
