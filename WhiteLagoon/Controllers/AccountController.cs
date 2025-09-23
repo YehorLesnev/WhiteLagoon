@@ -40,6 +40,12 @@ public class AccountController(
 
 		if (result.Succeeded)
 		{
+			var user = await userManager.FindByEmailAsync(loginViewModel.Email);
+			if (await userManager.IsInRoleAsync(user, RolesConstants.Admin))
+			{
+				return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
+			}
+
 			if (!string.IsNullOrEmpty(loginViewModel.RedirectUrl))
 			{
 				return LocalRedirect(loginViewModel.RedirectUrl);
