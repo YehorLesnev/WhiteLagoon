@@ -14,7 +14,7 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 	public IActionResult Index()
 	{
 		return View();
-	}	
+	}
 
 	[Authorize]
 	public async Task<IActionResult> FinalizeBooking(int villaId, DateOnly checkInDate, int nights)
@@ -24,14 +24,14 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 
 		var user = await unitOfWork.Users.GetAsync(u => u.Id == userId);
 
-		if(user is null)
+		if (user is null)
 		{
 			return RedirectToAction(nameof(AccountController.Login), "Account");
-		}	
+		}
 
 		var villa = await unitOfWork.Villas.GetAsync(v => v.Id == villaId, includeProperties: nameof(Villa.VillaAmenities));
 
-		if(villa is null)
+		if (villa is null)
 		{
 			return NotFound();
 		}
@@ -59,7 +59,7 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 	{
 		var villa = await unitOfWork.Villas.GetAsync(v => v.Id == booking.VillaId, includeProperties: nameof(Villa.VillaAmenities));
 
-		if(villa is null)
+		if (villa is null)
 		{
 			return NotFound();
 		}
@@ -77,7 +77,7 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 			{
 				new SessionLineItemOptions
 				{
-					PriceData = new SessionLineItemPriceDataOptions          
+					PriceData = new SessionLineItemPriceDataOptions
 					{
 						UnitAmount = (long)(booking.TotalCost * 100),
 						Currency = "usd",
@@ -93,14 +93,14 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 			},
 			Mode = "payment",
 			SuccessUrl = $"{domain}/Booking/BookingConfirmation?bookingId={booking.Id}",
-			CancelUrl =  $"{domain}/Booking/FinalizeBooking?villaId={booking.VillaId}&checkInDate={booking.CheckInDate}&nights={booking.Nights}",
+			CancelUrl = $"{domain}/Booking/FinalizeBooking?villaId={booking.VillaId}&checkInDate={booking.CheckInDate}&nights={booking.Nights}",
 		};
 
 		var service = new SessionService();
 		Session session = service.Create(options);
 
 		await unitOfWork.Bookings.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
-		await unitOfWork.SaveAsync();	
+		await unitOfWork.SaveAsync();
 
 		Response.Headers.Add("Location", session.Url);
 
@@ -112,13 +112,13 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 	{
 		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId, includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
 
-		if(booking is not null && booking.Status.Equals(BookingStatusConstants.Pending, StringComparison.InvariantCultureIgnoreCase))
+		if (booking is not null && booking.Status.Equals(BookingStatusConstants.Pending, StringComparison.InvariantCultureIgnoreCase))
 		{
 			var service = new SessionService();
 			var session = service.Get(booking.StripeSessionId);
-			
+
 			if (session.PaymentStatus == "paid")
-			{ 
+			{
 				await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Approved);
 				await unitOfWork.Bookings.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
 				await unitOfWork.SaveAsync();
@@ -131,13 +131,39 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 	[Authorize]
 	public async Task<IActionResult> Details(int bookingId)
 	{
-		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId, 
+		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId,
 									includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
 
-		if(booking is null)
+		if (booking is null)
 			return NotFound();
 
+		if(booking?.VillaNumber == 0 && booking.Status == BookingStatusConstants.Approved)
+		{
+			var availableVillaNumbers = await AssignAvailableVillaNumberByVilla(booking.VillaId);
+			booking.VillaNumbers = await unitOfWork.VillaNumbers.GetAllAsync(x => x.VillaId == booking.VillaId &&
+																				availableVillaNumbers.Contains(x.Villa_Number));
+		}
+
 		return View(booking);
+	}
+
+	private async Task<List<int>> AssignAvailableVillaNumberByVilla(int villaId)
+	{
+		List<int> availableVillaNumbers = [];
+		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync(vn => vn.VillaId == villaId);
+
+		var checkedInVilla = (await unitOfWork.Bookings.GetAllAsync(x => x.VillaId == villaId &&
+																		x.Status == BookingStatusConstants.CheckedIn))
+													.Select(x => x.VillaNumber);
+		foreach (var villaNumber in villaNumbers ?? [])
+		{
+			if (!checkedInVilla.Contains(villaNumber.Villa_Number))
+			{
+				availableVillaNumbers.Add(villaNumber.Villa_Number);
+			}
+		}
+
+		return availableVillaNumbers;
 	}
 
 	#region API Calls
@@ -160,11 +186,11 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 			var userId = claimsIdentity?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
 			bookings = await unitOfWork.Bookings
-				.GetAllAsync(b => b.UserId == userId, 
+				.GetAllAsync(b => b.UserId == userId,
 							includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
 		}
 
-		if(!string.IsNullOrEmpty(status))
+		if (!string.IsNullOrEmpty(status))
 		{
 			bookings = bookings.Where(b => b.Status.Equals(status, StringComparison.InvariantCultureIgnoreCase));
 		}

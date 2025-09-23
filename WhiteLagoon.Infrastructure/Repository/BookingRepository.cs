@@ -14,7 +14,7 @@ public class BookingRepository(ApplicationDbContext dbContext)
 		dbSet.Update(entity);
 	}
 
-	public async Task UpdateStatusAsync(int bookingId, string bookingStatus)
+	public async Task UpdateStatusAsync(int bookingId, string bookingStatus, int villaNumber = 0)
 	{
 		var booking = await dbSet.FirstOrDefaultAsync(b => b.Id == bookingId);
 
@@ -25,6 +25,7 @@ public class BookingRepository(ApplicationDbContext dbContext)
 
 		if (bookingStatus.Equals(BookingStatusConstants.CheckedIn, StringComparison.InvariantCultureIgnoreCase))
 		{
+			booking.VillaNumber = villaNumber;
 			booking.ActualCheckInDate = DateTime.Now;
 		}
 

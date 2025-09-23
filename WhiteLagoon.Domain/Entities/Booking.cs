@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WhiteLagoon.Domain.Entities;
@@ -55,4 +56,8 @@ public class Booking
 	public DateTime ActualCheckOutDate { get; set; }
 
 	public int VillaNumber { get; set; }
+
+	[NotMapped]
+	[ValidateNever]
+	public List<VillaNumber> VillaNumbers { get; set; }
 }
