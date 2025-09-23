@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using WhiteLagoon.Application.Common.Interfaces;
-using WhiteLagoon.Application.Utility;
+using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.ViewModels.Auth;
 

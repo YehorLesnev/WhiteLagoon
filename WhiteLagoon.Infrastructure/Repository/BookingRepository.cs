@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WhiteLagoon.Application.Common.Interfaces;
-using WhiteLagoon.Application.Utility;
+using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.Infrastructure.Data;
 

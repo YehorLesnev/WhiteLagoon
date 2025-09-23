@@ -1,4 +1,4 @@
-﻿namespace WhiteLagoon.Application.Utility;
+﻿namespace WhiteLagoon.Application.Utility.Constants;
 
 public static class BookingStatusConstants
 {
