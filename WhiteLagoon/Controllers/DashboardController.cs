@@ -70,6 +70,59 @@ public class DashboardController(IUnitOfWork unitOfWork) : Controller
 		return Json(pieChartViewModel);
 	}
 
+	public async Task<IActionResult> GetMemberAndBookingLineChartData()
+	{
+		var bookingData = (await unitOfWork.Bookings.GetAllAsync(b => b.BookingDate >= DateTime.Now.AddDays(-30) && b.BookingDate.Date <= DateTime.Now))
+			.GroupBy(b => b.BookingDate.Date)
+			.Select(x => new
+			{
+				DateTime = x.Key,
+				NewBookingCount = x.Count()
+			});
+
+		var customerData = (await unitOfWork.Users.GetAllAsync(b => b.CreatedAt >= DateTime.Now.AddDays(-30) && b.CreatedAt.Date <= DateTime.Now))
+			.GroupBy(b => b.CreatedAt.Date)
+			.Select(x => new
+			{
+				DateTime = x.Key,
+				NewCustomerCount = x.Count()
+			});
+
+		var leftJoin = bookingData.GroupJoin(customerData,
+				booking => booking.DateTime,
+				customer => customer.DateTime,
+				(booking, customer) => new { booking.DateTime, booking.NewBookingCount, NewCustomerCount = customer.Select(c => c.NewCustomerCount).FirstOrDefault() });
+
+		var rightjoin = customerData.GroupJoin(bookingData,
+				customer => customer.DateTime,
+				booking => booking.DateTime,
+				(customer, booking) => new { customer.DateTime, NewBookingCount = booking.Select(b => b.NewBookingCount).FirstOrDefault(), customer.NewCustomerCount });
+
+		var mergedData = leftJoin.Union(rightjoin).OrderBy(x => x.DateTime).ToList();
+		var newCustomerData = mergedData.Select(x => x.NewCustomerCount).ToArray();
+		var newBookingData = mergedData.Select(x => x.NewBookingCount).ToArray();
+		var categories = mergedData.Select(x => x.DateTime.ToString("MM/dd/yyyy")).ToArray();
+
+		var lineChartViewModel = new LineChartViewModel
+		{
+			Categories = categories,
+			Series = [
+				new()
+				{
+					Name = "New Customers",
+					Data = newCustomerData
+				},
+				new()
+				{
+					Name = "New Bookings",
+					Data = newBookingData
+				}
+			]
+		};
+
+		return Json(lineChartViewModel);
+	}
+
 	private static RadialBarChartViewModel GetRadialBarChartViewModel(int totalCount, double currentMonthCount, double previousMonthCount)
 	{
 		var radialBarChartViewModel = new RadialBarChartViewModel

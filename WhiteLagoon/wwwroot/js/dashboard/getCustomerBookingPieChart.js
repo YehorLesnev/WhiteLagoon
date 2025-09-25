@@ -1,8 +1,8 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
-    loadTotalBookingsRadialChart();
+    loadTotalBookingsPieChart();
 });
 
-function loadTotalBookingsRadialChart() {
+function loadTotalBookingsPieChart() {
     $(".chart-spinner").show();
 
     $.ajax({
