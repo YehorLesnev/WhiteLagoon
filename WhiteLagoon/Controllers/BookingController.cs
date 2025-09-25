@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
-using System.Linq.Expressions;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Application.Utility.Helpers;
@@ -44,6 +43,7 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 			CheckInDate = checkInDate,
 			Nights = nights,
 			CheckOutDate = checkInDate.AddDays(nights),
+			BookingDate = DateTime.Now,
 			TotalCost = villa.Price * nights,
 			UserId = user.Id,
 			PhoneNumber = user.PhoneNumber,
