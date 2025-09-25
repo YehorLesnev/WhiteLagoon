@@ -1,16 +1,16 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
-    loadTotalBookingsRadialChart();
+    loadUserRadialChart();
 });
 
-function loadTotalBookingsRadialChart() {
+function loadUserRadialChart() {
     $(".chart-spinner").show();
 
     $.ajax({
-        url: "/Dashboard/GetBookingRadialChartData",
+        url: "/Dashboard/GetRegisteredUserChartData",
         type: "GET",
         dataType: "json",
         success: function (data) {
-            document.querySelector("#spanTotalBookingCount").innerHTML = data.totalCount;
+            document.querySelector("#spanTotalUserCount").innerHTML = data.totalCount;
 
             const sectionnCurrentCount = document.createElement("span");
 
@@ -22,10 +22,10 @@ function loadTotalBookingsRadialChart() {
                 sectionnCurrentCount.innerHTML = `<i class="bi bi-arrow-down-right-circle"></i> <span>${data.currentMonthCount}</span>`;
             }
 
-            document.querySelector("#sectionBookingCount").append(sectionnCurrentCount);
-            document.querySelector("#sectionBookingCount").append("since last month");
+            document.querySelector("#sectionUserCount").append(sectionnCurrentCount);
+            document.querySelector("#sectionUserCount").append("since last month");
 
-            loadRadialBarChart("totalBookingRadialChart", data);
+            loadRadialBarChart("totalUserRadialChart", data);
 
             $(".chart-spinner").hide();
         }

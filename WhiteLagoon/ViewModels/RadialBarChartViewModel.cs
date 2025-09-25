@@ -2,11 +2,11 @@
 
 public class RadialBarChartViewModel
 {
-	public decimal TotalCount { get; set; }
+	public double TotalCount { get; set; }
 
-	public decimal CurrentMonthCount { get; set; }
+	public double CurrentMonthCount { get; set; }
 
-	public int IncreaseDecreaseAmount { get; set; }
+	public double IncreaseDecreaseAmount { get; set; }
 
 	public bool HasRatioIncreased { get; set; }
 
