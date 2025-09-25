@@ -1,6 +1,6 @@
 ﻿function loadRadialBarChart(id, data) {
-    var chartColors = getChartColorsArray(id);
-    var options = {
+    const chartColors = getChartColorsArray(id);
+    const options = {
         fill: {
             colors: chartColors
         },
@@ -27,20 +27,20 @@
         labels: [""]
     };
 
-    var chart = new ApexCharts(document.querySelector("#" + id), options);
+    const chart = new ApexCharts(document.querySelector("#" + id), options);
     chart.render();
 }
 
 
 function getChartColorsArray(chartId) {
     if (document.getElementById(chartId) !== null) {
-        var colors = document.getElementById(chartId).getAttribute("data-colors");
+        let colors = document.getElementById(chartId).getAttribute("data-colors");
         if (colors) {
             colors = JSON.parse(colors);
             return colors.map(function (value) {
-                var newValue = value.replace(" ", "");
+                const newValue = value.replace(" ", "");
                 if (newValue.indexOf(",") === -1) {
-                    var color = getComputedStyle(document.documentElement).getPropertyValue(newValue);
+                    const color = getComputedStyle(document.documentElement).getPropertyValue(newValue);
                     if (color) return color;
                     else return newValue;;
                 }

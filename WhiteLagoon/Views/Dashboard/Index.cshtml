@@ -18,7 +18,7 @@
 						</h4>
 					</div>
 					<p class="text-muted mt-3 mb-0" id="sectionBookingCount"></p>
-				
+
 					<div class="justify-content-center text-center chart-spinner" style="display:none;">
 						<div class="spinner-border" role="status">
 							<span class="visually-hidden">Loading...</span>
@@ -75,6 +75,38 @@
 				</div>
 			</div>
 		</div>
+		<div class="col-md-12 col-xl-8 mt-2">
+			<div class="card">
+				<div class="card-body">
+
+					<div class="justify-content-center text-center chart-spinner" style="display:none;">
+						<div class="spinner-border" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-12 col-xl-4 mt-2">
+			<div class="card">
+				<div class="card-body">
+					<div class="">
+						<p class="text-muted mb-0">Customer Booking</p>
+					</div>
+					<div id="customerBookingPieChart" data-colors='["--bs-warning", "--bs-primary"]'>
+					</div>
+
+					<div class="justify-content-center text-center chart-spinner" style="display:none;">
+						<div class="spinner-border" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
 
 	</div>
 </div>
@@ -84,4 +116,5 @@
 	<script src="~/js/dashboard/getTotalBookingsRadial.js" asp-append-version="true"></script>
 	<script src="~/js/dashboard/getTotalUsersRadial.js" asp-append-version="true"></script>
 	<script src="~/js/dashboard/getTotalRevenueRadial.js" asp-append-version="true"></script>
+	<script src="~/js/dashboard/getCustomerBookingPieChart.js" asp-append-version="true"></script>
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
-using WhiteLagoon.ViewModels;
+using WhiteLagoon.ViewModels.Charts;
 
 namespace WhiteLagoon.Controllers;
 
@@ -20,7 +20,7 @@ public class DashboardController(IUnitOfWork unitOfWork) : Controller
 
 	public async Task<IActionResult> GetBookingRadialChartData()
 	{
-		var totalBookings = await unitOfWork.Bookings.GetAllAsync(b => b.Status != BookingStatusConstants.Cancelled);
+		var totalBookings = await unitOfWork.Bookings.GetAllAsync(b => b.Status != BookingStatusConstants.Cancelled && b.Status != BookingStatusConstants.Pending);
 		var countByCurrentMonth = totalBookings.Count(b => b.BookingDate >= currentMonthStartDate && b.BookingDate <= DateTime.Now);
 		var countByPreviousMonth = totalBookings.Count(b => b.BookingDate >= previousMonthStartDate && b.BookingDate <= currentMonthStartDate);
 
@@ -28,7 +28,6 @@ public class DashboardController(IUnitOfWork unitOfWork) : Controller
 
 		return Json(radialBarChartViewModel);
 	}
-
 
 	public async Task<IActionResult> GetRegisteredUserChartData()
 	{
@@ -41,10 +40,9 @@ public class DashboardController(IUnitOfWork unitOfWork) : Controller
 		return Json(radialBarChartViewModel);
 	}
 
-
 	public async Task<IActionResult> GetRevenueChartData()
 	{
-		var totalBookings = await unitOfWork.Bookings.GetAllAsync(b => b.Status != BookingStatusConstants.Cancelled);
+		var totalBookings = await unitOfWork.Bookings.GetAllAsync(b => b.Status != BookingStatusConstants.Cancelled && b.Status != BookingStatusConstants.Pending);
 		var totalRevenue = Convert.ToInt32(totalBookings.Sum(b => b.TotalCost));
 		var countByCurrentMonth = totalBookings.Where(b => b.BookingDate >= currentMonthStartDate && b.BookingDate <= DateTime.Now).Sum(b => b.TotalCost);
 		var countByPreviousMonth = totalBookings.Where(b => b.BookingDate >= previousMonthStartDate && b.BookingDate <= currentMonthStartDate).Sum(b => b.TotalCost);
@@ -54,6 +52,23 @@ public class DashboardController(IUnitOfWork unitOfWork) : Controller
 		return Json(radialBarChartViewModel);
 	}
 
+	public async Task<IActionResult> GetBookingPieChartData()
+	{
+		var totalBookings = await unitOfWork.Bookings.GetAllAsync(b => b.BookingDate >= DateTime.Now.AddDays(-30) &&
+			(b.Status != BookingStatusConstants.Cancelled && b.Status != BookingStatusConstants.Pending));
+
+		var customerWithOneBooking = totalBookings.GroupBy(b => b.UserId).Where(g => g.Count() == 1).Select(x => x.Key).ToList();
+		int bookingsByNewCustomer = customerWithOneBooking.Count;
+		int bookingsByReturningCustomer = totalBookings.Count - bookingsByNewCustomer;
+
+		var pieChartViewModel = new PieChartViewModel
+		{
+			Series = [bookingsByNewCustomer, bookingsByReturningCustomer],
+			Labels = ["New Customer", "Returning Customer"],
+		};
+
+		return Json(pieChartViewModel);
+	}
 
 	private static RadialBarChartViewModel GetRadialBarChartViewModel(int totalCount, double currentMonthCount, double previousMonthCount)
 	{

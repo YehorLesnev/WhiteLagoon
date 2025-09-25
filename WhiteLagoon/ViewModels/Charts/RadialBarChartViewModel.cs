@@ -1,4 +1,4 @@
-﻿namespace WhiteLagoon.ViewModels;
+﻿namespace WhiteLagoon.ViewModels.Charts;
 
 public class RadialBarChartViewModel
 {
