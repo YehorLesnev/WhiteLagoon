@@ -1,6 +1,6 @@
 ﻿namespace WhiteLagoon.ViewModels.Charts;
 
-public class PieChartViewModel
+public class PieChartDto
 {
 	public double[] Series { get; set; }
 

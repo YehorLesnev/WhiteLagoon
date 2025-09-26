@@ -1,6 +1,6 @@
 ﻿namespace WhiteLagoon.ViewModels.Charts;
 
-public class RadialBarChartViewModel
+public class RadialBarChartDto
 {
 	public double TotalCount { get; set; }
 

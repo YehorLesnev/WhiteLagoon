@@ -1,6 +1,6 @@
 ﻿namespace WhiteLagoon.ViewModels.Charts;
 
-public class LineChartViewModel
+public class LineChartDto
 {
 	public List<ChartDatePoint> Series { get; set; }
 
