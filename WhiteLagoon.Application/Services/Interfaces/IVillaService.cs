@@ -13,4 +13,6 @@ public interface IVillaService
 	Task UpdateVillaAsync(Villa villa, string basePath);
 
 	Task DeleteVillaAsync(Villa villa, string basePath);
+
+	Task<List<Villa>> GetVillasAvailabilityByDate(int nights, DateOnly checkInDate);
 }

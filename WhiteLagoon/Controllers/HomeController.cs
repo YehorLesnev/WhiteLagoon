@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
-using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.ViewModels;
 using WhiteLagoon.Application.Utility.Helpers;
 using WhiteLagoon.Application.Utility.Constants;
 using Syncfusion.Presentation;
+using WhiteLagoon.Application.Services.Interfaces;
 
 namespace WhiteLagoon.Controllers;
 
-public class HomeController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment) : Controller
+public class HomeController(IVillaService villaService, IWebHostEnvironment webHostEnvironment) : Controller
 {
 	public async Task<IActionResult> Index()
 	{
@@ -18,21 +18,9 @@ public class HomeController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostE
 	[HttpPost]
 	public async Task<IActionResult> GetVillasByDate(int nights, DateOnly checkInDate)
 	{
-		var villaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities));
-		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync();
-		var bookings = await unitOfWork.Bookings.GetAllAsync(b =>
-			b.Status == BookingStatusConstants.Approved || b.Status == BookingStatusConstants.CheckedIn);
-
-		foreach (var villa in villaList ?? [])
-		{
-			int roomsAvailable = VillaRoomsAvailabilityHelper.GetNumberOfAvailableRooms(villa.Id, villaNumbers, checkInDate, nights, bookings);
-
-			villa.IsAvailable = roomsAvailable > 0;
-		}
-
 		var homeViewModel = new HomeViewModel
 		{
-			VillaList = villaList,
+			VillaList = await villaService.GetVillasAvailabilityByDate(nights, checkInDate),
 			Nights = nights,
 			CheckInDate = checkInDate
 		};
@@ -43,7 +31,7 @@ public class HomeController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostE
 	[HttpPost]
 	public async Task<IActionResult> GeneratePPTExport(int id)
 	{
-		var villa = await unitOfWork.Villas.GetAsync(v => v.Id == id, includeProperties: nameof(Villa.VillaAmenities));
+		var villa = await villaService.GetVillaByIdAsync(id);
 		if (villa == null)
 		{
 			TempData["error"] = "Villa not found.";
@@ -147,7 +135,7 @@ public class HomeController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostE
 	{
 		var homeViewModel = new HomeViewModel
 		{
-			VillaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities)),
+			VillaList = await villaService.GetAllVillasAsync(),
 			Nights = 1,
 			CheckInDate = DateOnly.FromDateTime(DateTime.Now)
 		};

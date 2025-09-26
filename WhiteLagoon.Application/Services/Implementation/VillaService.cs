@@ -1,5 +1,7 @@
 ﻿using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Services.Interfaces;
+using WhiteLagoon.Application.Utility.Constants;
+using WhiteLagoon.Application.Utility.Helpers;
 using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Application.Services.Implementation;
@@ -57,6 +59,23 @@ public class VillaService(IUnitOfWork unitOfWork) : IVillaService
 	public async Task<Villa?> GetVillaByIdAsync(int id)
 	{
 		return await unitOfWork.Villas.GetAsync(x => x.Id == id, includeProperties: nameof(Villa.VillaAmenities));
+	}
+
+	public async Task<List<Villa>> GetVillasAvailabilityByDate(int nights, DateOnly checkInDate)
+	{
+		var villaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities));
+		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync();
+		var bookings = await unitOfWork.Bookings.GetAllAsync(b =>
+			b.Status == BookingStatusConstants.Approved || b.Status == BookingStatusConstants.CheckedIn);
+
+		foreach (var villa in villaList ?? [])
+		{
+			int roomsAvailable = VillaRoomsAvailabilityHelper.GetNumberOfAvailableRooms(villa.Id, villaNumbers, checkInDate, nights, bookings);
+
+			villa.IsAvailable = roomsAvailable > 0;
+		}	
+		
+		return villaList ?? [];
 	}
 
 	public async Task UpdateVillaAsync(Villa villa, string basePath)
