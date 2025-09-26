@@ -33,6 +33,11 @@ public class VillaNumberService(IUnitOfWork unitOfWork) : IVillaNumberService
 		return await unitOfWork.VillaNumbers.GetAllAsync(includeProperties: nameof(VillaNumber.Villa));
 	}
 
+	public async Task<List<VillaNumber>> GetAllVillaNumbersByVillaIdAsync(int villaId)
+	{
+		return await unitOfWork.VillaNumbers.GetAllAsync(n => n.VillaId == villaId, includeProperties: nameof(VillaNumber.Villa));
+	}
+
 	public async Task<VillaNumber?> GetVillaNumberByIdAsync(int id)
 	{
 		return await unitOfWork.VillaNumbers.GetAsync(x => x.Villa_Number == id);

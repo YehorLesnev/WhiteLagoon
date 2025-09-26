@@ -78,6 +78,18 @@ public class VillaService(IUnitOfWork unitOfWork) : IVillaService
 		return villaList ?? [];
 	}
 
+	public async Task<bool> IsVillaAvailable(int villaId, int nights, DateOnly checkInDate)
+	{
+		var villaList = await unitOfWork.Villas.GetAllAsync();
+		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync();
+		var bookings = await unitOfWork.Bookings.GetAllAsync(b =>
+			b.Status == BookingStatusConstants.Approved || b.Status == BookingStatusConstants.CheckedIn);
+
+		int roomsAvailable = VillaRoomsAvailabilityHelper.GetNumberOfAvailableRooms(villaId, villaNumbers, checkInDate, nights, bookings);
+
+		return roomsAvailable > 0;
+	}
+
 	public async Task UpdateVillaAsync(Villa villa, string basePath)
 	{
 		if (villa.Image is not null)

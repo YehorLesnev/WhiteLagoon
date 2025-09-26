@@ -15,4 +15,6 @@ public interface IVillaService
 	Task DeleteVillaAsync(Villa villa, string basePath);
 
 	Task<List<Villa>> GetVillasAvailabilityByDate(int nights, DateOnly checkInDate);
+
+	Task<bool> IsVillaAvailable(int villaId, int nights, DateOnly checkInDate);
 }

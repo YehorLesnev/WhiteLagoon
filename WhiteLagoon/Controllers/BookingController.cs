@@ -1,18 +1,23 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
 using Syncfusion.DocIO.DLS;
 using Syncfusion.DocIORenderer;
 using Syncfusion.Drawing;
 using Syncfusion.Pdf;
-using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Services.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
-using WhiteLagoon.Application.Utility.Helpers;
 using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Controllers;
 
-public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment) : Controller
+public class BookingController(
+	IBookingService bookingService,
+	IVillaService villaService,
+	IVillaNumberService villaNumberService,
+	UserManager<ApplicationUser> userManager,
+	IWebHostEnvironment webHostEnvironment) : Controller
 {
 	[Authorize]
 	public IActionResult Index()
@@ -26,14 +31,14 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		var claimsIdentity = User.Identity as System.Security.Claims.ClaimsIdentity;
 		var userId = claimsIdentity?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-		var user = await unitOfWork.Users.GetAsync(u => u.Id == userId);
+		var user = await userManager.FindByIdAsync(userId);
 
 		if (user is null)
 		{
 			return RedirectToAction(nameof(AccountController.Login), "Account");
 		}
 
-		var villa = await unitOfWork.Villas.GetAsync(v => v.Id == villaId, includeProperties: nameof(Villa.VillaAmenities));
+		var villa = await villaService.GetVillaByIdAsync(villaId);
 
 		if (villa is null)
 		{
@@ -62,7 +67,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	[HttpPost]
 	public async Task<IActionResult> FinalizeBooking(Booking booking)
 	{
-		var villa = await unitOfWork.Villas.GetAsync(v => v.Id == booking.VillaId, includeProperties: nameof(Villa.VillaAmenities));
+		var villa = await villaService.GetVillaByIdAsync(booking.VillaId);
 
 		if (villa is null)
 		{
@@ -72,23 +77,15 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		booking.TotalCost = villa.Price * booking.Nights;
 		booking.Status = BookingStatusConstants.Pending;
 
-		var villaList = await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities));
-		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync();
-		var bookings = await unitOfWork.Bookings.GetAllAsync(b =>
-			b.Status == BookingStatusConstants.Approved || b.Status == BookingStatusConstants.CheckedIn);
-
-		int roomsAvailable = VillaRoomsAvailabilityHelper.GetNumberOfAvailableRooms(villa.Id, villaNumbers, booking.CheckInDate, booking.Nights, bookings);
-
-		if(roomsAvailable <= 0)
+		if (!(await villaService.IsVillaAvailable(villa.Id, booking.Nights, booking.CheckInDate)))
 		{
 			TempData["error"] = "Rooms has been sold out! Please choose different dates or a different villa.";
 			return RedirectToAction(nameof(FinalizeBooking), new { villaId = booking.VillaId, checkInDate = booking.CheckInDate, nights = booking.Nights });
 		}
 
-		villa.IsAvailable = roomsAvailable > 0;
+		villa.IsAvailable = true;
 
-		await unitOfWork.Bookings.AddAsync(booking);
-		await unitOfWork.SaveAsync();
+		await bookingService.CreateBookingAsync(booking);
 
 		var domain = $"{Request.Scheme}://{Request.Host.Value}";
 		var options = new SessionCreateOptions
@@ -119,8 +116,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		var service = new SessionService();
 		Session session = service.Create(options);
 
-		await unitOfWork.Bookings.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
-		await unitOfWork.SaveAsync();
+		await bookingService.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
 
 		Response.Headers.Add("Location", session.Url);
 
@@ -130,7 +126,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	[Authorize]
 	public async Task<IActionResult> BookingConfirmation(int bookingId)
 	{
-		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId, includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+		var booking = await bookingService.GetBookingByIdAsync(bookingId);
 
 		if (booking is not null && booking.Status.Equals(BookingStatusConstants.Pending, StringComparison.InvariantCultureIgnoreCase))
 		{
@@ -139,9 +135,8 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 
 			if (session.PaymentStatus == "paid")
 			{
-				await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Approved);
-				await unitOfWork.Bookings.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
-				await unitOfWork.SaveAsync();
+				await bookingService.UpdateStatusAsync(booking.Id, BookingStatusConstants.Approved);
+				await bookingService.UpdateStripePaymentIDAsync(booking.Id, session.Id, session.PaymentIntentId);
 			}
 		}
 
@@ -151,17 +146,16 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	[Authorize]
 	public async Task<IActionResult> Details(int bookingId)
 	{
-		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == bookingId,
-									includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+		var booking = await bookingService.GetBookingByIdAsync(bookingId);
 
 		if (booking is null)
 			return NotFound();
 
-		if(booking?.VillaNumber == 0 && booking.Status == BookingStatusConstants.Approved)
+		if (booking?.VillaNumber == 0 && booking.Status == BookingStatusConstants.Approved)
 		{
 			var availableVillaNumbers = await AssignAvailableVillaNumberByVilla(booking.VillaId);
-			booking.VillaNumbers = await unitOfWork.VillaNumbers.GetAllAsync(x => x.VillaId == booking.VillaId &&
-																				availableVillaNumbers.Contains(x.Villa_Number));
+			booking.VillaNumbers = [.. (await villaNumberService.GetAllVillaNumbersAsync()).Where(x => x.VillaId == booking.VillaId &&
+																				availableVillaNumbers.Contains(x.Villa_Number))];
 		}
 
 		return View(booking);
@@ -171,8 +165,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	[Authorize(Roles = RolesConstants.Admin)]
 	public async Task<IActionResult> CheckIn(Booking booking)
 	{
-		await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.CheckedIn, booking.VillaNumber);
-		await unitOfWork.SaveAsync();
+		await bookingService.UpdateStatusAsync(booking.Id, BookingStatusConstants.CheckedIn, booking.VillaNumber);
 
 		TempData["success"] = "Booking checked in successfully.";
 
@@ -183,8 +176,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	[Authorize(Roles = RolesConstants.Admin)]
 	public async Task<IActionResult> CheckOut(Booking booking)
 	{
-		await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Completed, booking.VillaNumber);
-		await unitOfWork.SaveAsync();
+		await bookingService.UpdateStatusAsync(booking.Id, BookingStatusConstants.Completed, booking.VillaNumber);
 
 		TempData["success"] = "Booking checked out successfully.";
 
@@ -195,8 +187,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	[Authorize(Roles = RolesConstants.Admin)]
 	public async Task<IActionResult> CancelBooking(Booking booking)
 	{
-		await unitOfWork.Bookings.UpdateStatusAsync(booking.Id, BookingStatusConstants.Cancelled, booking.VillaNumber);
-		await unitOfWork.SaveAsync();
+		await bookingService.UpdateStatusAsync(booking.Id, BookingStatusConstants.Cancelled, booking.VillaNumber);
 
 		TempData["success"] = "Booking cancelled successfully.";
 
@@ -215,8 +206,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		using FileStream fileStream = new(dataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		document.Open(fileStream, Syncfusion.DocIO.FormatType.Automatic);
 
-		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == id,
-									includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+		var booking = await bookingService.GetBookingByIdAsync(id);
 
 		if (booking is null)
 			return NotFound();
@@ -261,7 +251,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		table.TableFormat.Paddings.Top = 7f;
 		table.TableFormat.Paddings.Bottom = 7f;
 
-		int rows = booking.VillaNumber >0 ? 3 : 2;
+		int rows = booking.VillaNumber > 0 ? 3 : 2;
 		table.ResetCells(rows, 4);
 
 		WTableRow row0 = table.Rows[0];
@@ -282,7 +272,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		row.Cells[3].AddParagraph().AppendText(booking.TotalCost.ToString("c"));
 		row.Cells[3].Width = 80;
 
-		if(booking.VillaNumber > 0)
+		if (booking.VillaNumber > 0)
 		{
 			WTableRow row2 = table.Rows[2];
 			row2.Cells[0].AddParagraph().AppendText($"VILLA NUMBER");
@@ -315,7 +305,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		using DocIORenderer renderer = new();
 		MemoryStream ms = new();
 
-		switch(downloadType)
+		switch (downloadType)
 		{
 			case nameof(DocumentType.Word):
 				document.Save(ms, Syncfusion.DocIO.FormatType.Docx);
@@ -336,11 +326,10 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	private async Task<List<int>> AssignAvailableVillaNumberByVilla(int villaId)
 	{
 		List<int> availableVillaNumbers = [];
-		var villaNumbers = await unitOfWork.VillaNumbers.GetAllAsync(vn => vn.VillaId == villaId);
+		var villaNumbers = await villaNumberService.GetAllVillaNumbersByVillaIdAsync(villaId);
 
-		var checkedInVilla = (await unitOfWork.Bookings.GetAllAsync(x => x.VillaId == villaId &&
-																		x.Status == BookingStatusConstants.CheckedIn))
-													.Select(x => x.VillaNumber);
+		var checkedInVilla = await bookingService.GetCheckedInVillaNumbers(villaId);
+		
 		foreach (var villaNumber in villaNumbers ?? [])
 		{
 			if (!checkedInVilla.Contains(villaNumber.Villa_Number))
@@ -360,26 +349,18 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 	{
 		IEnumerable<Booking> bookings;
 		var isAdmin = User.IsInRole(RolesConstants.Admin);
+		var userId = string.Empty;
 
-		if (isAdmin)
-		{
-			bookings = await unitOfWork.Bookings
-				.GetAllAsync(includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
-		}
-		else
+		if (string.IsNullOrEmpty(status))
+			status = string.Empty;
+
+		if (!isAdmin)
 		{
 			var claimsIdentity = User.Identity as System.Security.Claims.ClaimsIdentity;
-			var userId = claimsIdentity?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-			bookings = await unitOfWork.Bookings
-				.GetAllAsync(b => b.UserId == userId,
-							includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+			userId = claimsIdentity?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 		}
 
-		if (!string.IsNullOrEmpty(status))
-		{
-			bookings = bookings.Where(b => b.Status.Equals(status, StringComparison.InvariantCultureIgnoreCase));
-		}
+		bookings = await bookingService.GetAllBookingsAsync(userId, status);
 
 		return Json(new { data = bookings });
 	}
