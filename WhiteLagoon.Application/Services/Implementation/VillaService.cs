@@ -51,12 +51,12 @@ public class VillaService(IUnitOfWork unitOfWork) : IVillaService
 
 	public async Task<List<Villa>> GetAllVillasAsync()
 	{
-		return await unitOfWork.Villas.GetAllAsync();
+		return await unitOfWork.Villas.GetAllAsync(includeProperties: nameof(Villa.VillaAmenities));
 	}
 
 	public async Task<Villa?> GetVillaByIdAsync(int id)
 	{
-		return await unitOfWork.Villas.GetAsync(x => x.Id == id);
+		return await unitOfWork.Villas.GetAsync(x => x.Id == id, includeProperties: nameof(Villa.VillaAmenities));
 	}
 
 	public async Task UpdateVillaAsync(Villa villa, string basePath)
