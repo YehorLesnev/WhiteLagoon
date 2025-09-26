@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
+using Syncfusion.DocIO.DLS;
+using Syncfusion.DocIORenderer;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Application.Utility.Helpers;
@@ -8,7 +10,7 @@ using WhiteLagoon.Domain.Entities;
 
 namespace WhiteLagoon.Controllers;
 
-public class BookingController(IUnitOfWork unitOfWork) : Controller
+public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment) : Controller
 {
 	[Authorize]
 	public IActionResult Index()
@@ -197,6 +199,65 @@ public class BookingController(IUnitOfWork unitOfWork) : Controller
 		TempData["success"] = "Booking cancelled successfully.";
 
 		return RedirectToAction(nameof(Details), new { bookingId = booking.Id });
+	}
+
+	[HttpPost]
+	[Authorize(Roles = RolesConstants.Admin)]
+	public async Task<IActionResult> GenerateInvoice(int id)
+	{
+		string basePath = webHostEnvironment.WebRootPath;
+
+		WordDocument document = new();
+		string dataPath = Path.Combine(basePath, "exports", "BookingDetails.docx");
+
+		using FileStream fileStream = new(dataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+		document.Open(fileStream, Syncfusion.DocIO.FormatType.Automatic);
+
+		var booking = await unitOfWork.Bookings.GetAsync(b => b.Id == id,
+									includeProperties: $"{nameof(Booking.User)},{nameof(Booking.Villa)}");
+
+		if (booking is null)
+			return NotFound();
+
+		TextSelection textSelection = document.Find("xx_customer_name", false, true);
+		WTextRange textRange = textSelection.GetAsOneRange();
+		textRange.Text = booking.Name;
+
+		textSelection = document.Find("XX_BOOKING_NUMBER", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = $"BOOKING ID - {booking.Id}";
+
+		textSelection = document.Find("XX_BOOKING_DATE", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = $"BOOKING DATE - {booking.BookingDate}";
+
+		textSelection = document.Find("xx_customer_phone", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = booking.PhoneNumber;
+
+		textSelection = document.Find("xx_payment_date", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = booking.PaymentDate.ToString();
+
+		textSelection = document.Find("xx_checkin_date", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = booking.CheckInDate.ToString();
+
+		textSelection = document.Find("xx_checkout_date", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = booking.CheckOutDate.ToString();
+
+		textSelection = document.Find("xx_booking_total", false, true);
+		textRange = textSelection.GetAsOneRange();
+		textRange.Text = booking.TotalCost.ToString("c");
+
+		using DocIORenderer renderer = new();
+
+		MemoryStream ms = new();
+		document.Save(ms, Syncfusion.DocIO.FormatType.Docx);
+		ms.Position = 0;
+
+		return File(ms, "application/docx", "BookingDetails.docx");
 	}
 
 	private async Task<List<int>> AssignAvailableVillaNumberByVilla(int villaId)
