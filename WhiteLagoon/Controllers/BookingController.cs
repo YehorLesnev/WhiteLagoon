@@ -251,6 +251,39 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		textRange = textSelection.GetAsOneRange();
 		textRange.Text = booking.TotalCost.ToString("c");
 
+		WTable table = new(document);
+		table.TableFormat.Borders.LineWidth = 1f;
+		table.TableFormat.Borders.Horizontal.LineWidth = 1f;
+		table.TableFormat.Borders.Color = Syncfusion.Drawing.Color.Black;
+		table.TableFormat.IsAutoResized = true;
+		table.TableFormat.Paddings.Top = 7f;
+		table.TableFormat.Paddings.Bottom = 7f;
+
+		table.ResetCells(2, 4);
+
+		WTableRow row0 = table.Rows[0];
+		row0.Cells[0].AddParagraph().AppendText("NIGHTS");
+		row0.Cells[0].Width = 80;
+		row0.Cells[1].AddParagraph().AppendText("VILLA");
+		row0.Cells[1].Width = 220;
+		row0.Cells[2].AddParagraph().AppendText("PRICE PER NIGHT");
+		row0.Cells[3].AddParagraph().AppendText("TOTAL");
+		row0.Cells[3].Width = 80;
+
+		WTableRow row = table.Rows[1];
+		row.Cells[0].AddParagraph().AppendText(booking.Nights.ToString());
+		row.Cells[0].Width = 80;
+		row.Cells[1].AddParagraph().AppendText(booking.Villa.Name);
+		row.Cells[1].Width = 220;
+		row.Cells[2].AddParagraph().AppendText(booking.Villa.Price.ToString("c"));
+		row.Cells[3].AddParagraph().AppendText(booking.TotalCost.ToString("c"));
+		row.Cells[3].Width = 80;
+
+		TextBodyPart tableBodyPart = new(document);
+		tableBodyPart.BodyItems.Add(table);
+
+		document.Replace("<ADDTABLEHERE>", tableBodyPart, false, true);
+
 		using DocIORenderer renderer = new();
 
 		MemoryStream ms = new();
