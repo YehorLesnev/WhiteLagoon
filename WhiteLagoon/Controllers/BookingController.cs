@@ -261,7 +261,8 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		table.TableFormat.Paddings.Top = 7f;
 		table.TableFormat.Paddings.Bottom = 7f;
 
-		table.ResetCells(2, 4);
+		int rows = booking.VillaNumber >0 ? 3 : 2;
+		table.ResetCells(rows, 4);
 
 		WTableRow row0 = table.Rows[0];
 		row0.Cells[0].AddParagraph().AppendText("NIGHTS");
@@ -280,6 +281,16 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		row.Cells[2].AddParagraph().AppendText(booking.Villa.Price.ToString("c"));
 		row.Cells[3].AddParagraph().AppendText(booking.TotalCost.ToString("c"));
 		row.Cells[3].Width = 80;
+
+		if(booking.VillaNumber > 0)
+		{
+			WTableRow row2 = table.Rows[2];
+			row2.Cells[0].AddParagraph().AppendText($"VILLA NUMBER");
+			row2.Cells[0].Width = 80;
+			row2.Cells[1].AddParagraph().AppendText(booking.VillaNumber.ToString());
+			row2.Cells[1].Width = 220;
+			row2.Cells[3].Width = 80;
+		}
 
 		var customStyleName = "TableStyle";
 		WTableStyle tableStyle = document.AddTableStyle(customStyleName) as WTableStyle;
