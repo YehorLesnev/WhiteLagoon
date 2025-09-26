@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.ViewModels.Auth;
@@ -11,7 +9,6 @@ using WhiteLagoon.ViewModels.Auth;
 namespace WhiteLagoon.Controllers;
 
 public class AccountController(
-	IUnitOfWork unitOfWork,
 	UserManager<ApplicationUser> userManager,
 	SignInManager<ApplicationUser> signInManager,
 	RoleManager<IdentityRole> roleManager,
