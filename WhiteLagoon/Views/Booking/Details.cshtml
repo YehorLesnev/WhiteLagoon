@@ -34,8 +34,18 @@
 				<form method="post">
 					<div class="row pt-1 mb-3" style="border-radius:20px;">
 						<div class="col-12 text-center">
-							<button asp-action="GenerateInvoice" asp-route-id="@Model.Id" type="submit" class="btn btn-sm btn-secondary my-1">
-								<i class="bi bi-file-earmark-word"></i> Generate Invoice
+							<button asp-action="GenerateInvoice" 
+									asp-route-id="@Model.Id"
+									asp-route-downloadType="@DocumentType.Word"
+									type="submit" class="btn btn-sm btn-primary my-1">
+								<i class="bi bi-file-earmark-word"></i> Generate Invoice (Word)
+							</button>
+
+							<button asp-action="GenerateInvoice"
+									asp-route-id="@Model.Id"
+									asp-route-downloadType="@DocumentType.Pdf"
+									type="submit" class="btn btn-sm btn-danger my-1">
+								<i class="bi bi-file-earmark-pdf"></i> Generate Invoice (PDF)
 							</button>
 						</div>
 					</div>

@@ -4,6 +4,7 @@ using Stripe.Checkout;
 using Syncfusion.DocIO.DLS;
 using Syncfusion.DocIORenderer;
 using Syncfusion.Drawing;
+using Syncfusion.Pdf;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Application.Utility.Helpers;
@@ -204,7 +205,7 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 
 	[HttpPost]
 	[Authorize(Roles = RolesConstants.Admin)]
-	public async Task<IActionResult> GenerateInvoice(int id)
+	public async Task<IActionResult> GenerateInvoice(int id, string downloadType)
 	{
 		string basePath = webHostEnvironment.WebRootPath;
 
@@ -301,12 +302,24 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		document.Replace("<ADDTABLEHERE>", tableBodyPart, false, true);
 
 		using DocIORenderer renderer = new();
-
 		MemoryStream ms = new();
-		document.Save(ms, Syncfusion.DocIO.FormatType.Docx);
-		ms.Position = 0;
 
-		return File(ms, "application/docx", "BookingDetails.docx");
+		switch(downloadType)
+		{
+			case nameof(DocumentType.Word):
+				document.Save(ms, Syncfusion.DocIO.FormatType.Docx);
+				ms.Position = 0;
+
+				return File(ms, "application/docx", "BookingDetails.docx");
+			case nameof(DocumentType.Pdf):
+				PdfDocument pdfDocument = renderer.ConvertToPDF(document);
+				pdfDocument.Save(ms);
+				ms.Position = 0;
+
+				return File(ms, "application/pdf", "BookingDetails.pdf");
+			default:
+				return BadRequest("Invalid document type.");
+		}
 	}
 
 	private async Task<List<int>> AssignAvailableVillaNumberByVilla(int villaId)
