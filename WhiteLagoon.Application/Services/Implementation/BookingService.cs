@@ -73,6 +73,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 			booking.ActualCheckOutDate = DateTime.Now;
 		}
 
+		unitOfWork.Bookings.Update(booking);
 		await unitOfWork.SaveAsync();
 	}
 
@@ -95,6 +96,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 			booking.IsPaymentSuccessful = true;
 		}
 
+		unitOfWork.Bookings.Update(booking);
 		await unitOfWork.SaveAsync();
 	}
 }
