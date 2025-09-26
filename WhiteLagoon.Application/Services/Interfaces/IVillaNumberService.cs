@@ -13,4 +13,6 @@ public interface IVillaNumberService
 	Task UpdateVillaNumberAsync(VillaNumber villa);
 
 	Task DeleteVillaNumberAsync(VillaNumber villa);
+
+	Task<bool> ExistsAsync(int id);
 }

@@ -23,6 +23,11 @@ public class VillaNumberService(IUnitOfWork unitOfWork) : IVillaNumberService
 		await unitOfWork.SaveAsync();
 	}
 
+	public async Task<bool> ExistsAsync(int id)
+	{
+		return await unitOfWork.VillaNumbers.AnyAsync(v => v.Villa_Number == id);
+	}
+
 	public async Task<List<VillaNumber>> GetAllVillaNumbersAsync()
 	{
 		return await unitOfWork.VillaNumbers.GetAllAsync(includeProperties: nameof(VillaNumber.Villa));

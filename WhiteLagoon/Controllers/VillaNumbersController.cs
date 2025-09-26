@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Services.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Domain.Entities;
@@ -11,7 +9,7 @@ using WhiteLagoon.ViewModels;
 namespace WhiteLagoon.Controllers;
 
 [Authorize(Roles = RolesConstants.Admin)]
-public class VillaNumbersController(IUnitOfWork unitOfWork, IVillaNumberService villaNumberService, IVillaService villaService) : Controller
+public class VillaNumbersController(IVillaNumberService villaNumberService, IVillaService villaService) : Controller
 {
 	public async Task<IActionResult> Index()
 	{
@@ -42,8 +40,7 @@ public class VillaNumbersController(IUnitOfWork unitOfWork, IVillaNumberService 
 	[HttpPost]
 	public async Task<IActionResult> Create(VillaNumber villaNumber)
 	{
-		var villaNumberAlreadyExists = await unitOfWork.VillaNumbers
-			.AnyAsync(vn => vn.Villa_Number == villaNumber.Villa_Number && vn.VillaId == villaNumber.VillaId);
+		var villaNumberAlreadyExists = await villaNumberService.ExistsAsync(villaNumber.Villa_Number);
 
 		if (villaNumberAlreadyExists)
 		{
@@ -54,7 +51,7 @@ public class VillaNumbersController(IUnitOfWork unitOfWork, IVillaNumberService 
 
 		if (!ModelState.IsValid || villaNumberAlreadyExists)
 		{
-			var villasSelectItems = (await unitOfWork.Villas.GetAllAsync())
+			var villasSelectItems = (await villaService.GetAllVillasAsync())
 				.Select(v => new SelectListItem
 				{
 					Value = v.Id.ToString(),
@@ -102,7 +99,7 @@ public class VillaNumbersController(IUnitOfWork unitOfWork, IVillaNumberService 
 		if (!ModelState.IsValid || villaNumber.Villa_Number == 0)
 			return RedirectToAction(nameof(Index));
 
-		if (await unitOfWork.VillaNumbers.AnyAsync(v => v.Villa_Number == villaNumber.Villa_Number))
+		if (await villaNumberService.ExistsAsync(villaNumber.Villa_Number))
 		{
 			TempData["error"] = "Villa Number with same number already exists";
 			return RedirectToAction(nameof(Index));
