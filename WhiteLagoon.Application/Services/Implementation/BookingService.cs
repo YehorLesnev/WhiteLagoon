@@ -72,6 +72,8 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 		{
 			booking.ActualCheckOutDate = DateTime.Now;
 		}
+
+		await unitOfWork.SaveAsync();
 	}
 
 	public async Task UpdateStripePaymentIDAsync(int bookingId, string sessionId, string paymentId)
@@ -92,5 +94,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 			booking.PaymentDate = DateTime.Now;
 			booking.IsPaymentSuccessful = true;
 		}
+
+		await unitOfWork.SaveAsync();
 	}
 }
