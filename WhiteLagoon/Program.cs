@@ -32,6 +32,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IVillaService, VillaService>();
 
 var app = builder.Build();
 

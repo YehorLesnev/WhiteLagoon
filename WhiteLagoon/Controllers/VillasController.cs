@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Services.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Domain.Entities;
 
@@ -8,12 +8,12 @@ namespace WhiteLagoon.Controllers;
 
 [Authorize(Roles = RolesConstants.Admin)]
 public class VillasController(
-    IUnitOfWork unitOfWork,
+    IVillaService villaService,
     IWebHostEnvironment webHostEnvironment) : Controller
 {
     public async Task<IActionResult> Index()
     {
-        var villas = await unitOfWork.Villas.GetAllAsync();
+        var villas = await villaService.GetAllVillasAsync();
 
         return View(villas);
     }
@@ -35,23 +35,7 @@ public class VillasController(
 			return View(villa);
 		}
 
-        if(villa.Image is not null)
-        {
-            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(villa.Image.FileName);
-			string imagePath = Path.Combine(webHostEnvironment.WebRootPath, @"images\VillaImage", fileName);
-		
-            using var fileStream = new FileStream(imagePath, FileMode.Create);
-            await villa.Image.CopyToAsync(fileStream);
-
-            villa.ImageUrl = $@"\images\VillaImage\{fileName}";
-		}
-        else
-        {
-            villa.ImageUrl = "https://placehold.co/600x400";
-		}
-
-	    await unitOfWork.Villas.AddAsync(villa);
-        await unitOfWork.SaveAsync();
+        await villaService.CreateVillaAsync(villa, webHostEnvironment.WebRootPath);
 
         TempData["success"] = "Villa created successfully.";    
 
@@ -60,7 +44,7 @@ public class VillasController(
 
     public async Task<IActionResult> Update(int villaId)
     {
-        Villa? villa = await unitOfWork.Villas.GetAsync(v => v.Id == villaId);
+        Villa? villa = await villaService.GetVillaByIdAsync(villaId);
 
         if(villa is null)
 			return RedirectToAction(nameof(HomeController.Error), "Home");
@@ -80,29 +64,7 @@ public class VillasController(
 			return View(villa);
 		}
 
-		if (villa.Image is not null)
-		{
-            if(!string.IsNullOrEmpty(villa.ImageUrl))
-            {
-                string oldImagePath = Path.Combine(webHostEnvironment.WebRootPath, villa.ImageUrl.TrimStart('\\'));
-                
-                if (System.IO.File.Exists(oldImagePath))
-                {
-                    System.IO.File.Delete(oldImagePath);
-                }
-			}
-
-			string fileName = Guid.NewGuid().ToString() + Path.GetExtension(villa.Image.FileName);
-			string imagePath = Path.Combine(webHostEnvironment.WebRootPath, @"images\VillaImage", fileName);
-
-			using var fileStream = new FileStream(imagePath, FileMode.Create);
-			await villa.Image.CopyToAsync(fileStream);
-
-			villa.ImageUrl = $@"\images\VillaImage\{fileName}";
-		}
-	
-		unitOfWork.Villas.Update(villa);
-        await unitOfWork.SaveAsync();
+		await villaService.UpdateVillaAsync(villa, webHostEnvironment.WebRootPath);
 
         TempData["success"] = "Villa updated successfully.";
 
@@ -111,7 +73,7 @@ public class VillasController(
 
     public async Task<IActionResult> Delete(int villaId)
     {
-        Villa? villa = await unitOfWork.Villas.GetAsync(v => v.Id == villaId);
+        Villa? villa = await villaService.GetVillaByIdAsync(villaId);
         
         if(villa is null)
 			return RedirectToAction(nameof(HomeController.Error), "Home");
@@ -122,22 +84,11 @@ public class VillasController(
     [HttpPost]
 	public async Task<IActionResult> Delete(Villa villa)
     {
-        var villaToDelete = await unitOfWork.Villas.GetAsync(v => v.Id == villa.Id);
+        var villaToDelete = await villaService.GetVillaByIdAsync(villa.Id);
         
 		if (villaToDelete is not null)
         {
-		    unitOfWork.Villas.Remove(villaToDelete);
-			await unitOfWork.SaveAsync();
-
-            if(!string.IsNullOrEmpty(villaToDelete.ImageUrl))
-            {
-                string imagePath = Path.Combine(webHostEnvironment.WebRootPath, villaToDelete.ImageUrl.TrimStart('\\'));
-                
-                if (System.IO.File.Exists(imagePath))
-                {
-                    System.IO.File.Delete(imagePath);
-                }
-			}
+		    await villaService.DeleteVillaAsync(villa, webHostEnvironment.WebRootPath);
 
             TempData["success"] = "Villa deleted successfully.";
 
