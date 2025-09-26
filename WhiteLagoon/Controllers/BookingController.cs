@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
 using Syncfusion.DocIO.DLS;
 using Syncfusion.DocIORenderer;
+using Syncfusion.Drawing;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Utility.Constants;
 using WhiteLagoon.Application.Utility.Helpers;
@@ -278,6 +279,21 @@ public class BookingController(IUnitOfWork unitOfWork, IWebHostEnvironment webHo
 		row.Cells[2].AddParagraph().AppendText(booking.Villa.Price.ToString("c"));
 		row.Cells[3].AddParagraph().AppendText(booking.TotalCost.ToString("c"));
 		row.Cells[3].Width = 80;
+
+		var customStyleName = "TableStyle";
+		WTableStyle tableStyle = document.AddTableStyle(customStyleName) as WTableStyle;
+		tableStyle.TableProperties.ColumnStripe = 2;
+		tableStyle.TableProperties.Paddings.Top = 2;
+		tableStyle.TableProperties.Paddings.Bottom = 1;
+		tableStyle.TableProperties.Paddings.Left = 5.4f;
+		tableStyle.TableProperties.Paddings.Right = 5.4f;
+
+		ConditionalFormattingStyle firstRowStyle = tableStyle.ConditionalFormattingStyles.Add(ConditionalFormattingType.FirstRow) as ConditionalFormattingStyle;
+		firstRowStyle.CharacterFormat.Bold = true;
+		firstRowStyle.CharacterFormat.TextColor = Color.FromArgb(255, 255, 255, 255);
+		firstRowStyle.CellProperties.BackColor = Color.Black;
+
+		table.ApplyStyle(customStyleName);
 
 		TextBodyPart tableBodyPart = new(document);
 		tableBodyPart.BodyItems.Add(table);
